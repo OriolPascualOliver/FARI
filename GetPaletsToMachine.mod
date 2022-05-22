@@ -1,17 +1,74 @@
-PROC GetPaletsToMachine(byte _Mosaic, byte _Cinta)!num tipus,robtarget pallet
-
+PROC GetPaletsToMachine(byte _Cinta, byte _index)
+!num tipus,robtarget pallet
+    !Flipa amb la recursivitat chavaless
     BackToZero(1);
     BackToZero(2);
     !Reset if needed
+    
 
-    TEST _Mosaic
+
+
+    TEST _Cinta !aixo fa que vagi a la fng cinta
     CASE 1:
-        IF LastPaletPos{_Cinta,3}>=0 THEN !si la ultima pos de la cinta en eix z es o
+        GoToPoint(Ppalet1, [PosMosaic{1, _index, Mosaic{_Cinta}}, PosMosaic{2, _index, Mosaic{_Cinta}}, PosMosaic{3, _index, Mosaic{_Cinta}}*10])
+    CASE 2: 
+        GoToPoint(Ppalet2, [PosMosaic{1, _index, Mosaic{_Cinta}}, PosMosaic{2, _index, Mosaic{_Cinta}}, PosMosaic{3, _index, Mosaic{_Cinta}}*10])
+    ENDTEST
+
+
+
+    _aux:=CmpMachine(_Cinta, _index)
+    IF materia{_aux} <> CountMateriaM{_aux} THEN 
+        _aux:=4;
+    ENDIF
+    !discard if already full
+    TEST _aux
+    CASE 1:
+        GoToP1;
+        Incr CountMateriaM{1}
+    CASE 2:
+        GoToP2;
+        Incr CountMateriaM{2}
+    CASE 3:
+        GoToP3;
+        Incr CountMateriaM{3}
+    DEFAULT:
+        GoToPoint(PDiscard, [0,0,0])
+    TPUI;
+
+!sheks
+    !TODO:
+    !sobren peces?-> tirar OK
+    !falten peces -> demanar OK
+    !si no entren palets -> home
+    !gestionar deixar palet a mitges
+
+    IF _index <> SizeMosaic{Mosaic{_Cinta}} THEN
+        Incr _index
+        GetPaletsToMachine(_Mosaic, _Cinta _index)
+    ELSEIF _Cinta = 1 THEN
+        !demanar palet 1
+        CONNECT PwrCinta1 WITH Trp_Cinta1;
+        ISignalDI Palet1,1,PwrCinta1;
+    ELSE
+        !demanar palet 2
+        CONNECT PwrCinta2 WITH Trp_Cinta2;
+        ISignalDI Palet2,1,PwrCinta2;
+    ENDIF
+!Anar a home mentres espera
 
 
 
 
-        IF LastPaletPos{_Cinta,3}>=0 THEN
+
+
+
+
+
+
+
+        IF LastPaletPos{_Cinta,3}>=0 THEN !si la ultima pos de la cinta en eix z es o, ergo, queden palets per treure
+
             IF LastPaletPos{_Cinta,2}<=1 THEN
                 IF _Cinta=1 AND CountMateriaP{1}+1<=SizeMosaic{1} THEN
                     TPWrite "Coge pieza "+Mosaic1{CountMateriaP{1}+1}+" del pallet 0";

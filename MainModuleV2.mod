@@ -81,6 +81,9 @@ MODULE MainModule
     VAR intnum PwrCinta2;
     !vars per iniciar cintes i fer entrar palets -INTERRUPTS
 
+    VAR bool RequestPalet{2}:=[FALSE, FALSE];
+    !Vars per guardar de forma rapida si s ha demanat un palet
+
     VAR num Priority{3}:=[0,0,0];
     !array per guardar prioritats maquina 1-3
 
@@ -116,43 +119,70 @@ PROC Main()
     !mirar quin falta i demanar palet
     
   ENDWHILE
-  TPErase;
+  TPErase;.
+
+
 ENDPROC
 
 
 !2) Funcs aux
+PROC GetMiddle(byte Size{3})
+!Func per trobar punt mig coords
+  _aux{3}=[Size{1}/2, Size{2}/2, Size{3}/2];
+  RETURN _aux
+ENDPROC
+
+PROC CmpMachine(byte _Cinta, byte _index)
+!func que retorna el tipus de materia per trobar la estaico
+  TEST Mosaic{_index}
+  CASE 1:
+    _aux:=Mosaic1{_index}
+  CASE 2:
+    _aux:=Mosaic2{_index}
+  CASE 3:
+    _aux:=Mosaic3{_index}
+  CASE 4:
+    _aux:=Mosaic4{_index}
+  ENDTEST
+  RETURN _aux
+ENDPROC
+
+
 
 PROC FillPosMosaic(string s) !TODO: fer macu si tinc temps
 !Func que omple la matriu de posicions
   !VAR byte PosMosaic{3,15,4}; ![x,y,z], [pos], [mosaic]
-  IF s = "CoolWay" THEN
+  IF s = "Coolway" THEN
     MosaicAux{15};
     FOR i FROM 1 TO 4 DO !mosaic
-      TEST i
-        CASE 1:
-          MosaicAux:=Mosaic1;
-        CASE 2:
-          MosaicAux:=Mosaic2;
-        CASE 3:
-          MosaicAux:=Mosaic3;
-        CASE 4:
-          MosaicAux:=Mosaic4;
-        DEFAULT:
-          err;
-      ENDTEST
       FOR j FROM 1 TO Dim(MosaicAux, 1) DO !mercancia del mosaic de la wena
         FOR k FROM 1 TO 3 DO !x,y,z
+          TEST i
+          CASE 1:
+            MosaicAux:=Mosaic1;
+
+          CASE 2:
+            MosaicAux:=Mosaic2;
+          CASE 3:
+            MosaicAux:=Mosaic3;
+          CASE 4:
+            MosaicAux:=Mosaic4;
+          DEFAULT:
+            err;
+        ENDTEST
+
+
         PosMosaic{k, j, i} := 0;
         ENDFOR
       ENDFOR
     ENDFOR
 
   ELSE
-  PosMosaic:=[[[10,10,2],[30,10,2],[20,25,2],[20,35,2], [10,10,1],[30,10,1],[20,25,1],[20,35,1], [10,10,0],[30,10,0],[20,25,0],[20,35,0]],
-              [[10,10,2],[30,10,2],[10,30,2],[30,30,2], [10,10,1],[30,10,1],[10,30,1],[30,30,1], [10,10,0],[30,10,0],[10,30,0],[30,30,0]],
-              [[5,15,2],[15,15,2],[25,15,2],[35,15,2],[20,35,2], [5,15,1],[15,15,1],[25,15,1],[35,15,1],[20,35,1], [5,15,0],[15,15,0],[25,15,0],[35,15,0],[20,35,0]],
-              [[5,15,2],[35,15,2],[25,35,2],[5,25,2],[20,20,2], [5,15,1],[35,15,1],[25,35,1],[5,25,1],[20,20,1], [5,15,0],[35,15,0],[25,35,0],[5,25,0],[20,20,0],]]
-  ENDIF
+    PosMosaic:=[[[10,10,2],[30,10,2],[20,25,2],[20,35,2], [10,10,1],[30,10,1],[20,25,1],[20,35,1], [10,10,0],[30,10,0],[20,25,0],[20,35,0]],
+                [[10,10,2],[30,10,2],[10,30,2],[30,30,2], [10,10,1],[30,10,1],[10,30,1],[30,30,1], [10,10,0],[30,10,0],[10,30,0],[30,30,0]],
+                [[5,15,2],[15,15,2],[25,15,2],[35,15,2],[20,35,2], [5,15,1],[15,15,1],[25,15,1],[35,15,1],[20,35,1], [5,15,0],[15,15,0],[25,15,0],[35,15,0],[20,35,0]],
+                [[5,15,2],[35,15,2],[25,35,2],[5,25,2],[20,20,2], [5,15,1],[35,15,1],[25,35,1],[5,25,1],[20,20,1], [5,15,0],[35,15,0],[25,35,0],[5,25,0],[20,20,0],]]
+    ENDIF
 ENDPROC
 
 PROC EnterNElements()
@@ -216,20 +246,6 @@ PROC GetPaletsToMachine(num _Cinta, num _Offset, num _Machinne )
   ENDIF
 ENDPROC
 
-
-!FIXME: FINSH THIS SHIT and make it wfork (COPY FROM NEW FILE) MAYBE BOT EVEN NECESARY BRUH
-PROC OffsetCalc(byte _Mosaic, byte _Index)
-  VAR num OFFSET{3}:=[0,0,0]
-  IF lastMosaic = _Mosaic THEN
-  FOR j FROM  
-
-  ELSE
-
-  ENDIF
-
-  RETURN OFFSET{3}
-ENDPROC
-
 PROC BackToZero(byte PaletNum) 
 ! proc per resetejar les ultimes posicions amb el flag RST...
   IF RstLastPaletPos{PaletNum}=TRUE THEN
@@ -239,6 +255,20 @@ PROC BackToZero(byte PaletNum)
     RstLastPaletPos{PaletNum}:=FALSE;
   ENDIF
 ENDPROC
+
+PROC WaitReq()
+!Func que va a home si s ha d esperar a que vinguin palets
+  IF THEN
+    GoToHome
+
+  WHILE
+
+
+
+
+ENDPROC
+
+
 
 PROC CmpPty()
 ! Func que calcula la prioritat d una manera super pro
@@ -289,15 +319,12 @@ PROC GetMateria()
 
     !This is to find the cinta w more intresting parts (CASE BOTH 0 HANDELED BY THE FACT THAT THEY ARE EQUAL TO ZEROW)
   IF auxiliar{2} > auxiliar{3} THEN
-    GetPaletsToMachine( HighestPriority, Palet1)
-  ELSEIF auxiliar{2} < auxiliar{3}
-    GetPaletsToMachine( HighestPriority, Ppalet2)
-  ELSE
-    CONNECT PwrCinta1 WITH Trp_Cinta1;
-    ISignalDI Palet1,1,PwrCinta1;
-
-    CONNECT PwrCinta2 WITH Trp_Cinta2;
-    ISignalDI Palet2,1,PwrCinta2;
+    GetPaletsToMachine( HighestPriority, 1, 1);
+    WaitReq();
+  ELSE auxiliar{2} < auxiliar{3}
+    GetPaletsToMachine( HighestPriority, 2, 1);
+    WaitReq(); !TODO: finish this (func que espera mentres no hi han palets)
+  
   ENDIF
   
   
@@ -313,15 +340,15 @@ PROC TPUI()
   TPErase;
   TPWrite " Suma peces total estaci� 1: "\Num:=materia{1};
   TPWrite " Peces entrades: "\Num:=CountMateria{1};
-  TPWrite " Falten per entrar: "\Num:=materia{1}-CountMateria{1};
+  TPWrite " Falten per entrar: "\Num:=materia{1}-CountMateriaM{1};
   TPWrite " --------------------------------------";
   TPWrite " Suma peces total estaci� 2: "\Num:=materia{2};
   TPWrite " Peces entrades: "\Num:=CountMateria{2};
-  TPWrite " Falten per entrar: "\Num:=materia{2}-CountMateria{2};
+  TPWrite " Falten per entrar: "\Num:=materia{2}-CountMateriaM{2};
   TPWrite " --------------------------------------";
   TPWrite " Suma peces total estaci� 3: "\Num:=materia{3};
   TPWrite " Peces entrades: "\Num:=CountMateria{3};
-  TPWrite " Falten per entrar: "\Num:=materia{3}-CountMateria{3};
+  TPWrite " Falten per entrar: "\Num:=materia{3}-CountMateriaM{3};
 ENDPROC
 
 PROC err()
@@ -343,7 +370,7 @@ ENDPROC
 
 !Funcs aborrides de moviments a maquines i punts i tal
 !{GoToPoint(punt, offset), GoToHome, GoToP1, GoToP2, GoToP3}
-  PROC GoToPoint(robtarget _PTG, num _OFST{3})
+  PROC GoToPoint(robtarget _PTG, byte _OFST{3})
     !INPUT: PointToGo
       !func que va qualsevol pos del palet de manera guai
       MoveJ Offs(_PTG, offset_Ppalet{1}+_OFST{1}, offset_Ppalet{2}+_OSFT{2}, offset_Ppalet{3}+Zoffset+_OSFT{3}), v500, fine, tool0;
@@ -372,7 +399,9 @@ ENDPROC
   ENDPROC
 
 ENDMODULE
-!TODO: GO TO PLAET NO LONGER AVAILABLE, OBSOLETE
+
+
+!TODO: GO TO PLAET NO LONGER AVAILABLE, OBSOLETE HAS TO GOW
     PROC AgafarPalet(byte mosaic)
         IF materia{1} <> 0 THEN
             FOR j FROM 0 TO materia{1} DO
