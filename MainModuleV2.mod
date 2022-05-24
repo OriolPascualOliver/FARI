@@ -89,8 +89,6 @@ MODULE MainModule
     VAR stringdig ComputePriority:="";
     !Str per guardar l ordre d agafar peces
 
-    VAR num lastMosaic := [[0,0,0],[0,0,0],[0,0,0],[0,0,0]];
-    !array per guardar el ultim offset en funcio del tipus de mosaic
 
 !1) Main func
 PROC Main()
@@ -98,9 +96,9 @@ PROC Main()
   GoToHome; !anar a Home pos
 
   ! Gestiona l entrada de dades de l usuari
-  EnterNElements
-  CheckNElements
-  CmpPty
+  EnterNElements;
+  CheckNElements;
+  CmpPty;
   FillPosMosaic("CoolWay");
 
   CONNECT PwrCinta1 WITH Trp_Cinta1;
@@ -118,69 +116,38 @@ PROC Main()
     !mirar quin falta i demanar palet
     
   ENDWHILE
-  TPErase;.
+  TPErase;
 
 
 ENDPROC
 
 
 !2) Funcs aux
-PROC GetMiddle(byte Size{3})
-!Func per trobar punt mig coords, chorras
-  _aux{3}=[Size{1}/2, Size{2}/2, Size{3}/2];
-  RETURN _aux
-ENDPROC
 
-PROC CmpMachine(byte _Cinta, byte _index)
-!func que retorna el tipus de materia per trobar la estaico, chorras
-  TEST Mosaic{_index}
+PROC CmpMachine(byte PvtCinta, num PvtIndex)
+!func que retorna el tipus de materia per trobar la estaico, chorras, FALTA ACABAr
+  TEST Mosaic{PvtIndex}
   CASE 1:
-    _aux:=Mosaic1{_index}
+    VAR byte PvtAux:=Mosaic1{PvtIndex};
   CASE 2:
-    _aux:=Mosaic2{_index}
+    VAR byte PvtAux:=Mosaic2{PvtIndex};
   CASE 3:
-    _aux:=Mosaic3{_index}
+    VAR byte PvtAux:=Mosaic3{PvtIndex};
   CASE 4:
-    _aux:=Mosaic4{_index}
+    VAR byte PvtAux:=Mosaic4{PvtIndex};
   ENDTEST
-  RETURN _aux
+  RETURN PvtAux;
 ENDPROC
 
 
 
 PROC FillPosMosaic(string s) !TODO: fer macu si tinc temps, Rta: no.
 !Func que omple la matriu de posicions
-  !VAR byte PosMosaic{3,15,4}; ![x,y,z], [pos], [mosaic]
-  IF s = "Coolway" THEN
-    MosaicAux{15};
-    FOR i FROM 1 TO 4 DO !mosaic
-      FOR j FROM 1 TO Dim(MosaicAux, 1) DO !mercancia del mosaic de la wena
-        FOR k FROM 1 TO 3 DO !x,y,z
-          TEST i
-          CASE 1:
-            MosaicAux:=Mosaic1;
-          CASE 2:
-            MosaicAux:=Mosaic2;
-          CASE 3:
-            MosaicAux:=Mosaic3;
-          CASE 4:
-            MosaicAux:=Mosaic4;
-          DEFAULT:
-            err;
-        ENDTEST
-
-
-        PosMosaic{k, j, i} := 0;
-        ENDFOR
-      ENDFOR
-    ENDFOR
-
-  ELSE
     PosMosaic:=[[[10,10,2],[30,10,2],[20,25,2],[20,35,2],           [10,10,1],[30,10,1],[20,25,1],[20,35,1],          [10,10,0],[30,10,0],[20,25,0],[20,35,0]],
                 [[10,10,2],[30,10,2],[10,30,2],[30,30,2],           [10,10,1],[30,10,1],[10,30,1],[30,30,1],          [10,10,0],[30,10,0],[10,30,0],[30,30,0]],
                 [[5,15,2],[15,15,2],[25,15,2],[35,15,2],[20,35,2],  [5,15,1],[15,15,1],[25,15,1],[35,15,1],[20,35,1], [5,15,0],[15,15,0],[25,15,0],[35,15,0],[20,35,0]],
-                [[5,15,2],[35,15,2],[25,35,2],[5,25,2],[20,20,2],   [5,15,1],[35,15,1],[25,35,1],[5,25,1],[20,20,1],  [5,15,0],[35,15,0],[25,35,0],[5,25,0],[20,20,0],]]
-    ENDIF
+                [[5,15,2],[35,15,2],[25,35,2],[5,25,2],[20,20,2],   [5,15,1],[35,15,1],[25,35,1],[5,25,1],[20,20,1],  [5,15,0],[35,15,0],[25,35,0],[5,25,0],[20,20,0]]];
+    
 ENDPROC
 
 PROC EnterNElements()
@@ -190,11 +157,11 @@ PROC EnterNElements()
       TPErase;
       TPWrite "MAQUINA "\Num:=i;
       TPReadNum resposta,"Enter element count: ";
-      IF resposta > 0 DO
+      IF resposta > 0 THEN
         materia{i}:=resposta;
       ELSE
         TPWrite "ENTER A VALID INPUT STUPID :( ";
-        i=i-1;
+        i:=i-1;
       ENDIF
   ENDFOR
 
@@ -203,11 +170,11 @@ PROC EnterNElements()
       TPErase;
       TPWrite "MAQUINA "\Num:=i;
       TPReadNum resposta,"Enter priority level (form 1 to 3 being 1 the highest) pls: ";
-      IF resposta > 0 AND resposta < 4 DO
+      IF resposta > 0 AND resposta < 4 THEN
         priority{i}:=resposta;
       ELSE
         TPWrite "ENTER A VALID INPUT STUPID :( ";
-        i=i-1;
+        i:=i-1;
       ENDIF
 
   ENDFOR
@@ -225,59 +192,57 @@ PROC CheckNElements()
     
 ENDPROC
 
-PROC GetPaletsToMachine(byte _Cinta, byte _index)
+PROC GetPaletsToMachine(byte PvtCinta, byte PvtIndex)
 !num tipus,robtarget pallet
     !Flipa amb la recursivitat chavaless
     BackToZero(1);
     BackToZero(2);
     !Reset if needed
     
-    TEST _Cinta !aixo fa que vagi a la fng cinta
+    TEST PvtCinta 
     CASE 1:
-        GoToPoint(Ppalet1, [PosMosaic{1, _index, Mosaic{_Cinta}}, PosMosaic{2, _index, Mosaic{_Cinta}}, PosMosaic{3, _index, Mosaic{_Cinta}}*10])
+        GoToPoint(Ppalet1, [PosMosaic{1, PvtIndex, Mosaic{PvtCinta}}, PosMosaic{2, PvtIndex, Mosaic{PvtCinta}}, PosMosaic{3, PvtIndex, Mosaic{PvtCinta}}*10]);
     CASE 2: 
-        GoToPoint(Ppalet2, [PosMosaic{1, _index, Mosaic{_Cinta}}, PosMosaic{2, _index, Mosaic{_Cinta}}, PosMosaic{3, _index, Mosaic{_Cinta}}*10])
+        GoToPoint(Ppalet2, [PosMosaic{1, PvtIndex, Mosaic{PvtCinta}}, PosMosaic{2, PvtIndex, Mosaic{PvtCinta}}, PosMosaic{3, PvtIndex, Mosaic{PvtCinta}}*10]);
     ENDTEST
 
 
 
-    _aux:=CmpMachine(_Cinta, _index)
-    IF materia{_aux} <> CountMateriaM{_aux} THEN 
-        _aux:=4;
+    VAR byte PvtAux:=CmpMachine(PvtCinta, PvtIndex);
+    
+    IF materia{PvtAux} <> CountMateriaM{PvtAux} THEN 
+        PvtAux:=4;
     ENDIF
     
-    TEST _aux
+    TEST PvtAux
     CASE 1:
         GoToP1;
-        Incr CountMateriaM{1}
+        Incr CountMateriaM{1};
     CASE 2:
         GoToP2;
-        Incr CountMateriaM{2}
+        Incr CountMateriaM{2};
     CASE 3:
         GoToP3;
-        Incr CountMateriaM{3}
+        Incr CountMateriaM{3};
     DEFAULT:!discard if already full
-        GoToPoint(PDiscard, [0,0,0])
+        GoToPoint(PDiscard, [0,0,0]);
+    ENDTEST
+
     TPUI;
 
-!sheks
-    !TODO:
-    !sobren peces?-> tirar OK
-    !falten peces -> demanar OK
-    !si no entren palets -> home OK
-    !gestionar deixar palet a mitges
 
-    IF _index <= SizeMosaic{Mosaic{_Cinta}} THEN
-        Incr _index
-        GetPaletsToMachine(_Mosaic, _Cinta _index)
-    ELSEIF _Cinta = 1 THEN
+
+    IF PvtIndex <= SizeMosaic{Mosaic{PvtCinta}} THEN
+        Incr PvtIndex;
+        GetPaletsToMachine(PvtCinta, PvtIndex);
+    ELSEIF PvtCinta = 1 THEN
         !demanar palet 1
-        CONNECT PwrCinta1 WITH Trp_Cinta1;
+        CONNECT PwrCinta1 WITH TrpPvtCinta1;
         ISignalDI Palet1,1,PwrCinta1;
         RequestPalet{1}:=TRUE;
     ELSE
         !demanar palet 2
-        CONNECT PwrCinta2 WITH Trp_Cinta2;
+        CONNECT PwrCinta2 WITH TrpPvtCinta2;
         ISignalDI Palet2,1,PwrCinta2;
         RequestPalet{2}:=TRUE;
     ENDIF
@@ -297,9 +262,9 @@ ENDPROC
 
 PROC WaitReq()
 !Func que va a home si s ha d esperar a que vinguin palets
-  IF NOT DetectCinta1 AND NOTDetectCinta2 AND RequestPalet{1} AND RequestPalet{2} THEN
+  IF NOT DetectCinta1 AND NOT DetectCinta2  AND RequestPalet{1} AND RequestPalet{2} THEN
     GoToHome;
-    WHILE NOT DetectCinta1 AND NOTDetectCinta2 DO
+    WHILE NOT DetectCinta1 AND NOT DetectCinta2 DO
       WaitTime 0.5;
     ENDWHILE
   ENDIF
@@ -333,8 +298,8 @@ ENDPROC
 PROC GetMateria()
 !Here is where the magic happens btch winkwink 
   VAR byte Index:=1;
-
-  IF FlagPaletWithStock{1} AND FlagPaletWithStock{2} AND NOT FlagNoStock DO !TODO: gestio demanar palets si no n0hi han i tema de deixar un a mitges
+!TODO: gestio demanar palets si no n0hi han i tema de deixar un a mitges
+  IF FlagPaletWithStock{1} AND FlagPaletWithStock{2} AND NOT FlagNoStock DO
     VAR byte HighestPriority:= StrToByte(ComputePriority{Index});
   
 
@@ -451,4 +416,3 @@ ENDPROC
   ENDPROC
 
 ENDMODULE
-
