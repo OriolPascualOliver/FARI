@@ -1,4 +1,5 @@
-MODULE MainModule
+
+   MODULE MainModule
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !   CODI FASE 3 jdrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
     !
@@ -126,15 +127,16 @@ ENDPROC
 
 PROC CmpMachine(byte PvtCinta, num PvtIndex)
 !func que retorna el tipus de materia per trobar la estaico, chorras, FALTA ACABAr
+  VAR byte PvtAux:=0;
   TEST Mosaic{PvtIndex}
   CASE 1:
-    VAR byte PvtAux:=Mosaic1{PvtIndex};
+    PvtAux:=Mosaic1{PvtIndex};
   CASE 2:
-    VAR byte PvtAux:=Mosaic2{PvtIndex};
+    PvtAux:=Mosaic2{PvtIndex};
   CASE 3:
-    VAR byte PvtAux:=Mosaic3{PvtIndex};
+    PvtAux:=Mosaic3{PvtIndex};
   CASE 4:
-    VAR byte PvtAux:=Mosaic4{PvtIndex};
+    PvtAux:=Mosaic4{PvtIndex};
   ENDTEST
   RETURN PvtAux;
 ENDPROC
@@ -201,7 +203,7 @@ PROC GetPaletsToMachine(byte PvtCinta, byte PvtIndex)
     
     TEST PvtCinta 
     CASE 1:
-        GoToPoint(Ppalet1, [PosMosaic{1, PvtIndex, Mosaic{PvtCinta}}, PosMosaic{2, PvtIndex, Mosaic{PvtCinta}}, PosMosaic{3, PvtIndex, Mosaic{PvtCinta}}*10]);
+        GoToPoint(Ppalet1, [PosMosaic{1, PvtIndex, Mosaic{PvtCinta}}, PosMosaic{2, PvtIndex, Mosaic{PvtCinta}}, PosMosaic{3, PvtIndex, Mosaic{PvtCinta}}*10] );
     CASE 2: 
         GoToPoint(Ppalet2, [PosMosaic{1, PvtIndex, Mosaic{PvtCinta}}, PosMosaic{2, PvtIndex, Mosaic{PvtCinta}}, PosMosaic{3, PvtIndex, Mosaic{PvtCinta}}*10]);
     ENDTEST
@@ -262,7 +264,7 @@ ENDPROC
 
 PROC WaitReq()
 !Func que va a home si s ha d esperar a que vinguin palets
-  IF NOT DetectCinta1 AND NOT DetectCinta2  AND RequestPalet{1} AND RequestPalet{2} THEN
+  IF (NOT DetectCinta1 AND NOT(DetectCinta2)  AND RequestPalet{1} AND RequestPalet{2} )THEN
     GoToHome;
     WHILE NOT DetectCinta1 AND NOT DetectCinta2 DO
       WaitTime 0.5;
@@ -298,51 +300,62 @@ ENDPROC
 PROC GetMateria()
 !Here is where the magic happens btch winkwink 
   VAR byte Index:=1;
+  VAR byte HighestPriority;
 !TODO: gestio demanar palets si no n0hi han i tema de deixar un a mitges
-  IF FlagPaletWithStock{1} AND FlagPaletWithStock{2} AND NOT FlagNoStock DO
-    VAR byte HighestPriority:= StrToByte(ComputePriority{Index});
+  IF FlagPaletWithStock{1} AND FlagPaletWithStock{2} AND NOT FlagNoStock THEN
+    HighestPriority:= StrToByte(ComputePriority{Index});
   
 
-  ELSEIF FlagPaletWithStock{1} DO
-    VAR byte HighestPriority:= 1;
+  ELSEIF FlagPaletWithStock{1} THEN
+    HighestPriority:= 1;
     !request 2
-  ELSEIF FlagPaletWithStock{2} DO
-    VAR byte HighestPriority:= 2;
+  ELSEIF FlagPaletWithStock{2} THEN
+    HighestPriority:= 2;
     !request1
   ELSE
-    WaitReq
+    WaitReq;
   ENDIF
 
   FOR j FROM 1 TO 2 DO !AQUI TENIM BYTE (NO POT SER BYTE; CAL ITERAR)
     TEST Mosaic{j}
     CASE 1:
       FOR k FROM 1 TO 4 DO
-        IF HighestPriority = Mosaic1{k} DO
+        IF HighestPriority = Mosaic1{k} THEN
           Incr auxiliar{j+1};
+        ENDIF
+      ENDFOR
     CASE 2:
       FOR k FROM 1 TO 4 DO
-        IF HighestPriority = Mosaic2{k} DO
+        IF HighestPriority = Mosaic2{k} THEN
             Incr auxiliar{j+1};
+        ENDIF
+      ENDFOR
     CASE 3:
       FOR k FROM 1 TO 4 DO
-        IF HighestPriority = Mosaic3{k} DO
+        IF HighestPriority = Mosaic3{k} THEN
             Incr auxiliar{j+1};
+        ENDIF
+      ENDFOR
     DEFAULT:
      FOR k FROM 1 TO 4 DO
-        IF HighestPriority = Mosaic4{k} DO
+        IF HighestPriority = Mosaic4{k} THEN
             Incr auxiliar{j+1};
+        ENDIF
+     ENDFOR
     ENDTEST
+    
 
     !This is to find the cinta w more intresting parts (CASE BOTH 0 HANDELED BY THE FACT THAT THEY ARE EQUAL TO ZEROW)
   IF auxiliar{2} > auxiliar{3} THEN
-    GetPaletsToMachine( HighestPriority, 1, 1);
+    GetPaletsToMachine(HighestPriority, 1, 1);
     WaitReq();
-  ELSE auxiliar{2} < auxiliar{3}
-    GetPaletsToMachine( HighestPriority, 2, 1);
+  ELSE 
+    GetPaletsToMachine(HighestPriority, 2, 1);
     WaitReq(); !TODO: finish this (func que espera mentres no hi han palets)
   
   ENDIF
-  ENDIF
+ENDFOR
+
   
   
     !tot entrat i prioritat calculada
@@ -355,16 +368,16 @@ ENDPROC
 PROC TPUI()
 !TPUI teach pendant User Interface PAT PENDING (R) TM
   TPErase;
-  TPWrite " Suma peces total estaci� 1: "\Num:=materia{1};
-  TPWrite " Peces entrades: "\Num:=CountMateria{1};
+  TPWrite " Suma peces total estaci? 1: "\Num:=materia{1};
+  TPWrite " Peces entrades: "\Num:=CountMateriaM{1};
   TPWrite " Falten per entrar: "\Num:=materia{1}-CountMateriaM{1};
   TPWrite " --------------------------------------";
-  TPWrite " Suma peces total estaci� 2: "\Num:=materia{2};
-  TPWrite " Peces entrades: "\Num:=CountMateria{2};
+  TPWrite " Suma peces total estaci? 2: "\Num:=materia{2};
+  TPWrite " Peces entrades: "\Num:=CountMateriaM{2};
   TPWrite " Falten per entrar: "\Num:=materia{2}-CountMateriaM{2};
   TPWrite " --------------------------------------";
-  TPWrite " Suma peces total estaci� 3: "\Num:=materia{3};
-  TPWrite " Peces entrades: "\Num:=CountMateria{3};
+  TPWrite " Suma peces total estaci? 3: "\Num:=materia{3};
+  TPWrite " Peces entrades: "\Num:=CountMateriaM{3};
   TPWrite " Falten per entrar: "\Num:=materia{3}-CountMateriaM{3};
 ENDPROC
 
@@ -387,12 +400,13 @@ ENDPROC
 
 !Funcs aborrides de moviments a maquines i punts i tal
 !{GoToPoint(punt, offset), GoToHome, GoToP1, GoToP2, GoToP3}
-  PROC GoToPoint(robtarget _PTG, byte _OFST{3})
+  PROC GoToPoint(robtarget PvtPTG, byte PvtOFST{3}) !found num, expected dim
     !INPUT: PointToGo
       !func que va qualsevol pos del palet de manera guai
-      MoveJ Offs(_PTG, offset_Ppalet{1}+_OFST{1}, offset_Ppalet{2}+_OSFT{2}, offset_Ppalet{3}+Zoffset+_OSFT{3}), v500, fine, tool0;
-      MoveL Offs(_PTG, offset_Ppalet{1}+_OFST{1}, offset_Ppalet{2}+_OFST{2}, offset_Ppalet{3})+_OFST{3}, v100, fine, tool0;
+      MoveJ Offs(PvtPTG, offset_Ppalet{1}+PvtOFST{1}, offset_Ppalet{2}+PvtOSFT{2}, offset_Ppalet{3}+Zoffset+PvtOSFT{3}), v500, fine, tool0;
+      MoveL Offs(PvtPTG, offset_Ppalet{1}+PvtOFST{1}, offset_Ppalet{2}+PvtOFST{2}, offset_Ppalet{3})+PvtOFST{3}, v100, fine, tool0;
   ENDPROC
+  
   PROC GoToHome()
       MoveJ home,v500,fine,tool0;
   ENDPROC
