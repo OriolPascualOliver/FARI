@@ -18,26 +18,21 @@
     CONST robtarget PUNTO3:=[[-516.33,94.41,124.87],[0.00252886,0.999052,-0.0406592,0.015331],[1,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
     CONST robtarget PDiscard:=[[20.31,274.84,159.06],[0.02082,-0.311179,-0.95011,0.00495981],[0,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
     !Vars de posicio'
-
     CONST num offset_Ppalet{3} := [0,-10,-10];
     CONST num offset_PUNTO{3} := [-10, -10, -10];
     CONST num Zoffset := 50; !PUNT SEGURETAT VERTICAL
     !Vars per contar els offsets i les distancies
-
     CONST orient rot90:=[0.018282857,-0.891902348,0.451718292,-0.011248286];
     !Valors quadratics per moure el rotor 90
     CONST orient rot0:=[0.02082,-0.311179,0.95011,0.00495981];
     !Valors quadratics per moure rotor pos 0
-
     VAR num LastPaletPos{2,3}:=[[0,0,2], [0,0,2]]; !NOTE: z=2 ja que hi han 2 nivells per treure i comenca des de dalt, quan z=0, ja s'han tret els 2 pisos de coses
     !array per guardar on es queda a despaletitzar {Last position as NPalet, XYZ}
     VAR bool RstLastPaletPos{2}:=[FALSE, FALSE];
     !array boleana per guardar l'estat del reset de la memoria de despaletitzar
-
     !--------------------  DATA  --------------------
     CONST byte SizeItem{3,3}:=[[10,40,20], [10,30,20], [20,20,20]];
     !Array dimensions materies, index 1->A, 3->C
-
     VAR byte Mosaic1{12}:=[3, 3, 1, 1, 3, 3, 1, 1, 3, 3, 1, 1]; !C, C, A, A, C, C, A, A, C, C, A, A
     VAR byte Mosaic2{12}:=[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]; !C, C, C, C, C, C, C, C, C, C, C, C
     VAR byte Mosaic3{15}:=[2, 2, 2, 2, 1, 2, 2, 2, 2, 1, 2, 2, 2, 2, 1]; !B, B, B, B, A, B, B, B, B, A, B, B, B, B, A
@@ -89,6 +84,10 @@
 
     VAR stringdig ComputePriority:="";
     !Str per guardar l ordre d agafar peces
+    
+    !------------ VARS "Privades" ------------
+    VAR byte Pvt1Aux:=0; !func 1
+    VAR byte PvtAux2:=0;
 
 
 !1) Main func
@@ -127,18 +126,18 @@ ENDPROC
 
 PROC CmpMachine(byte PvtCinta, num PvtIndex)
 !func que retorna el tipus de materia per trobar la estaico, chorras, FALTA ACABAr
-  VAR byte PvtAux:=0;
-  TEST Mosaic{PvtIndex}
+  
+  TEST Mosaic{Pvt1Index}
   CASE 1:
-    PvtAux:=Mosaic1{PvtIndex};
+    PvtAux:=Mosaic1{Pvt1Index};
   CASE 2:
-    PvtAux:=Mosaic2{PvtIndex};
+    PvtAux:=Mosaic2{Pvt1Index};
   CASE 3:
-    PvtAux:=Mosaic3{PvtIndex};
+    PvtAux:=Mosaic3{Pvt1Index};
   CASE 4:
-    PvtAux:=Mosaic4{PvtIndex};
+    PvtAux:=Mosaic4{Pvt1Index};
   ENDTEST
-  RETURN PvtAux;
+  RETURN Pvt1Aux;
 ENDPROC
 
 
@@ -194,29 +193,29 @@ PROC CheckNElements()
     
 ENDPROC
 
-PROC GetPaletsToMachine(byte PvtCinta, byte PvtIndex)
+PROC GetPaletsToMachine(byte PvtCinta3, byte PvtIndex)
 !num tipus,robtarget pallet
     !Flipa amb la recursivitat chavaless
+    
     BackToZero(1);
     BackToZero(2);
     !Reset if needed
-    
-    TEST PvtCinta 
+    TEST PvtCinta3 
     CASE 1:
-        GoToPoint(Ppalet1, [PosMosaic{1, PvtIndex, Mosaic{PvtCinta}}, PosMosaic{2, PvtIndex, Mosaic{PvtCinta}}, PosMosaic{3, PvtIndex, Mosaic{PvtCinta}}*10] );
+        GoToPoint Ppalet1, PosMosaic{1, PvtIndex, Mosaic{PvtCinta}}, PosMosaic{2, PvtIndex, Mosaic{PvtCinta}}, PosMosaic{3, PvtIndex, Mosaic{PvtCinta}}*10 ;
     CASE 2: 
-        GoToPoint(Ppalet2, [PosMosaic{1, PvtIndex, Mosaic{PvtCinta}}, PosMosaic{2, PvtIndex, Mosaic{PvtCinta}}, PosMosaic{3, PvtIndex, Mosaic{PvtCinta}}*10]);
+        GoToPoint Ppalet2, PosMosaic{1, PvtIndex, Mosaic{PvtCinta}}, PosMosaic{2, PvtIndex, Mosaic{PvtCinta}}, PosMosaic{3, PvtIndex, Mosaic{PvtCinta}}*10;
     ENDTEST
+    !PROC CmpMachine(byte PvtCinta, num PvtIndex)
+    PvtAux2:= CmpMachine PvtCinta3, PvtIndex;
 
-
-
-    VAR byte PvtAux:=CmpMachine(PvtCinta, PvtIndex);
     
-    IF materia{PvtAux} <> CountMateriaM{PvtAux} THEN 
+    
+    IF materia{PvtAux2} <> CountMateriaM{PvtAu2x} THEN 
         PvtAux:=4;
     ENDIF
     
-    TEST PvtAux
+    TEST PvtAux2
     CASE 1:
         GoToP1;
         Incr CountMateriaM{1};
@@ -227,17 +226,17 @@ PROC GetPaletsToMachine(byte PvtCinta, byte PvtIndex)
         GoToP3;
         Incr CountMateriaM{3};
     DEFAULT:!discard if already full
-        GoToPoint(PDiscard, [0,0,0]);
+        GoToPoint PDiscard, 0, 0, 0;
     ENDTEST
 
     TPUI;
 
 
 
-    IF PvtIndex <= SizeMosaic{Mosaic{PvtCinta}} THEN
+    IF PvtIndex <= SizeMosaic{Mosaic{PvtCinta3}} THEN
         Incr PvtIndex;
-        GetPaletsToMachine(PvtCinta, PvtIndex);
-    ELSEIF PvtCinta = 1 THEN
+        GetPaletsToMachine PvtCinta3, PvtIndex;
+    ELSEIF PvtCinta3 = 1 THEN
         !demanar palet 1
         CONNECT PwrCinta1 WITH TrpPvtCinta1;
         ISignalDI Palet1,1,PwrCinta1;
@@ -264,9 +263,9 @@ ENDPROC
 
 PROC WaitReq()
 !Func que va a home si s ha d esperar a que vinguin palets
-  IF (NOT DetectCinta1 AND NOT(DetectCinta2)  AND RequestPalet{1} AND RequestPalet{2} )THEN
+  IF DetectCinta1=FALSE AND DetectCinta2=FALSE  AND RequestPalet{1} AND RequestPalet{2} THEN
     GoToHome;
-    WHILE NOT DetectCinta1 AND NOT DetectCinta2 DO
+    WHILE DetectCinta1 = FALSE AND DetectCinta2 = FALSE DO
       WaitTime 0.5;
     ENDWHILE
   ENDIF
@@ -295,6 +294,7 @@ PROC CmpPty()
       ComputePriority := "321";
     DEFAULT:
       err;
+  ENDTEST
 ENDPROC
 
 PROC GetMateria()
@@ -302,10 +302,8 @@ PROC GetMateria()
   VAR byte Index:=1;
   VAR byte HighestPriority;
 !TODO: gestio demanar palets si no n0hi han i tema de deixar un a mitges
-  IF FlagPaletWithStock{1} AND FlagPaletWithStock{2} AND NOT FlagNoStock THEN
+  IF FlagPaletWithStock{1} AND FlagPaletWithStock{2} AND FlagNoStock = FALSE THEN !no funciona el NOT
     HighestPriority:= StrToByte(ComputePriority{Index});
-  
-
   ELSEIF FlagPaletWithStock{1} THEN
     HighestPriority:= 1;
     !request 2
@@ -347,16 +345,14 @@ PROC GetMateria()
 
     !This is to find the cinta w more intresting parts (CASE BOTH 0 HANDELED BY THE FACT THAT THEY ARE EQUAL TO ZEROW)
   IF auxiliar{2} > auxiliar{3} THEN
-    GetPaletsToMachine(HighestPriority, 1, 1);
-    WaitReq();
+    GetPaletsToMachine HighestPriority, 1;
+    WaitReq;
   ELSE 
-    GetPaletsToMachine(HighestPriority, 2, 1);
-    WaitReq(); !TODO: finish this (func que espera mentres no hi han palets)
+    GetPaletsToMachine HighestPriority, 1;
+    WaitReq; !TODO: finish this (func que espera mentres no hi han palets)
   
   ENDIF
 ENDFOR
-
-  
   
     !tot entrat i prioritat calculada
   
@@ -400,11 +396,11 @@ ENDPROC
 
 !Funcs aborrides de moviments a maquines i punts i tal
 !{GoToPoint(punt, offset), GoToHome, GoToP1, GoToP2, GoToP3}
-  PROC GoToPoint(robtarget PvtPTG, byte PvtOFST{3}) !found num, expected dim
+  PROC GoToPoint(robtarget PvtPTG, byte PvtOFST1, byte PvtOFST2, byte PvtOFST3) !found num, expected dim aixi que poso vars individuals i ja
     !INPUT: PointToGo
       !func que va qualsevol pos del palet de manera guai
-      MoveJ Offs(PvtPTG, offset_Ppalet{1}+PvtOFST{1}, offset_Ppalet{2}+PvtOSFT{2}, offset_Ppalet{3}+Zoffset+PvtOSFT{3}), v500, fine, tool0;
-      MoveL Offs(PvtPTG, offset_Ppalet{1}+PvtOFST{1}, offset_Ppalet{2}+PvtOFST{2}, offset_Ppalet{3})+PvtOFST{3}, v100, fine, tool0;
+      MoveJ Offs(PvtPTG, offset_Ppalet{1}+PvtOFST1, offset_Ppalet{2}+PvtOSFT2, offset_Ppalet{3}+Zoffset+PvtOSFT3), v500, fine, tool0;
+      MoveL Offs(PvtPTG, offset_Ppalet{1}+PvtOFST1, offset_Ppalet{2}+PvtOFST2, offset_Ppalet{3})+PvtOFST3, v100, fine, tool0;
   ENDPROC
   
   PROC GoToHome()
