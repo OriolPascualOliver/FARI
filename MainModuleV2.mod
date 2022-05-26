@@ -85,8 +85,11 @@
     VAR stringdig ComputePriority:="";
     !Str per guardar l ordre d agafar peces
     
+    VAR byte CmpMachineOut;
+    !Var sortida de compute machine (no tira el return)
+    
     !------------ VARS "Privades" ------------
-    VAR byte Pvt1Aux:=0; !func 1
+    VAR byte PvtAux1:=0; !func 1
     VAR byte PvtAux2:=0;
 
 
@@ -101,7 +104,7 @@ PROC Main()
   CmpPty;
   FillPosMosaic("CoolWay");
 
-  CONNECT PwrCinta1 WITH Trp_Cinta1;
+  CONNECT PwrCinta1 WITH Trp_Cinta1; !TODO: solve this
   ISignalDI Palet1,1,PwrCinta1;
 
   CONNECT PwrCinta2 WITH Trp_Cinta2;
@@ -124,20 +127,20 @@ ENDPROC
 
 !2) Funcs aux
 
-PROC CmpMachine(byte PvtCinta, num PvtIndex)
+PROC CmpMachine(byte PvtCinta, num PvtIndex1)
 !func que retorna el tipus de materia per trobar la estaico, chorras, FALTA ACABAr
   
-  TEST Mosaic{Pvt1Index}
+  TEST Mosaic{PvtIndex1}
   CASE 1:
-    PvtAux:=Mosaic1{Pvt1Index};
+    PvtAux1:=Mosaic1{PvtIndex1};
   CASE 2:
-    PvtAux:=Mosaic2{Pvt1Index};
+    PvtAux1:=Mosaic2{PvtIndex1};
   CASE 3:
-    PvtAux:=Mosaic3{Pvt1Index};
+    PvtAux1:=Mosaic3{PvtIndex1};
   CASE 4:
-    PvtAux:=Mosaic4{Pvt1Index};
+    PvtAux1:=Mosaic4{PvtIndex1};
   ENDTEST
-  RETURN Pvt1Aux;
+  CmpMachineOut:= PvtAux1;
 ENDPROC
 
 
@@ -202,17 +205,17 @@ PROC GetPaletsToMachine(byte PvtCinta3, byte PvtIndex)
     !Reset if needed
     TEST PvtCinta3 
     CASE 1:
-        GoToPoint Ppalet1, PosMosaic{1, PvtIndex, Mosaic{PvtCinta}}, PosMosaic{2, PvtIndex, Mosaic{PvtCinta}}, PosMosaic{3, PvtIndex, Mosaic{PvtCinta}}*10 ;
+        GoToPoint Ppalet1, PosMosaic{1, PvtIndex, Mosaic{PvtCinta3}}, PosMosaic{2, PvtIndex, Mosaic{PvtCinta3}}, PosMosaic{3, PvtIndex, Mosaic{PvtCinta3}}*10 ;
     CASE 2: 
-        GoToPoint Ppalet2, PosMosaic{1, PvtIndex, Mosaic{PvtCinta}}, PosMosaic{2, PvtIndex, Mosaic{PvtCinta}}, PosMosaic{3, PvtIndex, Mosaic{PvtCinta}}*10;
+        GoToPoint Ppalet2, PosMosaic{1, PvtIndex, Mosaic{PvtCinta3}}, PosMosaic{2, PvtIndex, Mosaic{PvtCinta3}}, PosMosaic{3, PvtIndex, Mosaic{PvtCinta3}}*10;
     ENDTEST
     !PROC CmpMachine(byte PvtCinta, num PvtIndex)
-    PvtAux2:= CmpMachine PvtCinta3, PvtIndex;
+    PvtAux2:= CmpMachineOut;
 
     
     
-    IF materia{PvtAux2} <> CountMateriaM{PvtAu2x} THEN 
-        PvtAux:=4;
+    IF materia{PvtAux2} <> CountMateriaM{PvtAux2} THEN 
+        PvtAux2:=4;
     ENDIF
     
     TEST PvtAux2
@@ -303,7 +306,7 @@ PROC GetMateria()
   VAR byte HighestPriority;
 !TODO: gestio demanar palets si no n0hi han i tema de deixar un a mitges
   IF FlagPaletWithStock{1} AND FlagPaletWithStock{2} AND FlagNoStock = FALSE THEN !no funciona el NOT
-    HighestPriority:= StrToByte(ComputePriority{Index});
+    HighestPriority:= StrToByte(ComputePriority{Index}); !TODO: solve this
   ELSEIF FlagPaletWithStock{1} THEN
     HighestPriority:= 1;
     !request 2
@@ -383,7 +386,7 @@ PROC err()
   Stop;
 ENDPROC
 
-!Traps
+!Traps !TODO:SOLVE ARRAY
   TRAP Trp_Cinta1 !neets update
     DetectCinta1:=TRUE;
     mosaic0:=0;
@@ -399,8 +402,8 @@ ENDPROC
   PROC GoToPoint(robtarget PvtPTG, byte PvtOFST1, byte PvtOFST2, byte PvtOFST3) !found num, expected dim aixi que poso vars individuals i ja
     !INPUT: PointToGo
       !func que va qualsevol pos del palet de manera guai
-      MoveJ Offs(PvtPTG, offset_Ppalet{1}+PvtOFST1, offset_Ppalet{2}+PvtOSFT2, offset_Ppalet{3}+Zoffset+PvtOSFT3), v500, fine, tool0;
-      MoveL Offs(PvtPTG, offset_Ppalet{1}+PvtOFST1, offset_Ppalet{2}+PvtOFST2, offset_Ppalet{3})+PvtOFST3, v100, fine, tool0;
+      MoveJ Offs(PvtPTG, offset_Ppalet{1}+PvtOFST1, offset_Ppalet{2}+PvtOFST2, offset_Ppalet{3}+Zoffset+PvtOFST3), v500, fine, tool0;
+      MoveL Offs(PvtPTG, offset_Ppalet{1}+PvtOFST1, offset_Ppalet{2}+PvtOFST2, offset_Ppalet{3}+PvtOFST3), v100, fine, tool0;
   ENDPROC
   
   PROC GoToHome()
@@ -408,21 +411,21 @@ ENDPROC
   ENDPROC
   PROC GoToP1()
       !func que va a maquina 1
-      MoveJ Offs(PUNTO1, offset_PUNTO1{1}, offset_PUNTO1{2}, offset_PUNTO1{3}+Zoffset), v500, fine, tool0;
-      MoveL Offs(PUNTO1, offset_PUNTO1{1}, offset_PUNTO1{2}, offset_PUNTO1{3}), v100, fine, tool0;
-      MoveL Offs(PUNTO1, offset_PUNTO1{1}, offset_PUNTO1{2}, offset_PUNTO1{3}+Zoffset), v100, fine, tool0;
+      MoveJ Offs(PUNTO1, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}+Zoffset), v500, fine, tool0;
+      MoveL Offs(PUNTO1, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}), v100, fine, tool0;
+      MoveL Offs(PUNTO1, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}+Zoffset), v100, fine, tool0;
   ENDPROC
   PROC GoToP2()
       !func que va a maquina 2
-      MoveJ Offs(PUNTO2, offset_PUNTO2{1}, offset_PUNTO2{2}, offset_PUNTO2{3}+Zoffset), v500, fine, tool0;
-      MoveL Offs(PUNTO2, offset_PUNTO2{1}, offset_PUNTO2{2}, offset_PUNTO2{3}), v100, fine, tool0;
-      MoveL Offs(PUNTO2, offset_PUNTO2{1}, offset_PUNTO2{2}, offset_PUNTO2{3}+Zoffset), v100, fine, tool0;
+      MoveJ Offs(PUNTO2, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}+Zoffset), v500, fine, tool0;
+      MoveL Offs(PUNTO2, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}), v100, fine, tool0;
+      MoveL Offs(PUNTO2, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}+Zoffset), v100, fine, tool0;
   ENDPROC
   PROC GoToP3()
       !func que va a maquina 3
-      MoveJ Offs(PUNTO3, offset_PUNTO3{1}, offset_PUNTO3{2}, offset_PUNTO3{3}+Zoffset), v500, fine, tool0;
-      MoveL Offs(PUNTO3, offset_PUNTO3{1}, offset_PUNTO3{2}, offset_PUNTO3{3}), v100, fine, tool0;
-      MoveL Offs(PUNTO3, offset_PUNTO3{1}, offset_PUNTO3{2}, offset_PUNTO3{3}+Zoffset), v100, fine, tool0;
+      MoveJ Offs(PUNTO3, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}+Zoffset), v500, fine, tool0;
+      MoveL Offs(PUNTO3, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}), v100, fine, tool0;
+      MoveL Offs(PUNTO3, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}+Zoffset), v100, fine, tool0;
   ENDPROC
 
 ENDMODULE
