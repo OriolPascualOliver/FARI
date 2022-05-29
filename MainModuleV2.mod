@@ -1,10 +1,9 @@
-
    MODULE MainModule
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !   CODI FASE 3 jdrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+    !   CODI FASE 3
     !
     !
-    ! date
+    ! date 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     !0) definicio i ini Vars
@@ -37,7 +36,8 @@
     VAR byte Mosaic2{12}:=[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]; !C, C, C, C, C, C, C, C, C, C, C, C
     VAR byte Mosaic3{15}:=[2, 2, 2, 2, 1, 2, 2, 2, 2, 1, 2, 2, 2, 2, 1]; !B, B, B, B, A, B, B, B, B, A, B, B, B, B, A
     VAR byte Mosaic4{15}:=[2, 2, 2, 2, 3, 2, 2, 2, 2, 3, 2, 2, 2, 2, 3]; !B, B, B, B, C, B, B, B, B, C, B, B, B, B, C
-    VAR byte SizeMosaic{4}:=[Dim(Mosaic1, 1), Dim(Mosaic2, 1), Dim(Mosaic3, 1), Dim(Mosaic4, 1)];
+    !VAR byte SizeMosaic{4}:=[Dim(Mosaic1, 1), Dim(Mosaic2, 1), Dim(Mosaic3, 1), Dim(Mosaic4, 1)];
+    VAR byte SizeMosaic{4}:=[12, 12, 15, 15];
     !array per guardar patrons de peces a mosaic CW+C, + numero items (s'hagues pogut posar en una super matriu al estilo matrix btw)3
 
     VAR byte PosMosaic{3,15,4}; ![x,y,z], [pos], [mosaic] TODO: revisar index posmosaic!
@@ -241,12 +241,12 @@ PROC GetPaletsToMachine(byte PvtCinta3, byte PvtIndex)
         GetPaletsToMachine PvtCinta3, PvtIndex;
     ELSEIF PvtCinta3 = 1 THEN
         !demanar palet 1
-        CONNECT PwrCinta1 WITH TrpPvtCinta1;
+        
         ISignalDI Palet1,1,PwrCinta1;
         RequestPalet{1}:=TRUE;
     ELSE
         !demanar palet 2
-        CONNECT PwrCinta2 WITH TrpPvtCinta2;
+        
         ISignalDI Palet2,1,PwrCinta2;
         RequestPalet{2}:=TRUE;
     ENDIF
