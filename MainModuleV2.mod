@@ -1,9 +1,9 @@
-   MODULE MainModule
+ MODULE MainModule
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !   CODI FASE 3
+    !   CODI FASE 3 jdrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
     !
     !
-    ! date 
+    ! date
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     !0) definicio i ini Vars
@@ -40,7 +40,7 @@
     VAR byte SizeMosaic{4}:=[12, 12, 15, 15];
     !array per guardar patrons de peces a mosaic CW+C, + numero items (s'hagues pogut posar en una super matriu al estilo matrix btw)3
 
-    VAR byte PosMosaic{3,15,4}; ![x,y,z], [pos], [mosaic] TODO: revisar index posmosaic!
+    VAR byte PosMosaic{4,15,3}; ![x,y,z], [pos], [mosaic] TODO: revisar index posmosaic!
     ! a mega array for each position fuck yeah imagine that array (la controladora te 2gb de memoria i 1 de DRAM aixi que pot guardar 180 bytes)
 
     !--------------------  VARS  --------------------
@@ -82,8 +82,8 @@
     VAR num Priority{3}:=[0,0,0];
     !array per guardar prioritats maquina 1-3
 
-    VAR stringdig ComputePriority:="";
-    !Str per guardar l ordre d agafar peces
+    VAR byte ComputePriority{3}:=[0,0,0];
+    !array per guardar l ordre d agafar peces
     
     VAR byte CmpMachineOut;
     !Var sortida de compute machine (no tira el return)
@@ -104,11 +104,11 @@ PROC Main()
   CmpPty;
   FillPosMosaic("CoolWay");
 
-  CONNECT PwrCinta1 WITH Trp_Cinta1; !TODO: solve this
-  ISignalDI Palet1,1,PwrCinta1;
+  !CONNECT PwrCinta1 WITH Trp_Cinta1; !TODO: solve this
+  !ISignalDI Palet1,1,PwrCinta1;
 
-  CONNECT PwrCinta2 WITH Trp_Cinta2;
-  ISignalDI Palet2,1,PwrCinta2;
+  !CONNECT PwrCinta2 WITH Trp_Cinta2;
+  !ISignalDI Palet2,1,PwrCinta2;
   !activa 2 cintes
 
   WHILE Run DO
@@ -147,8 +147,8 @@ ENDPROC
 
 PROC FillPosMosaic(string s) !TODO: fer macu si tinc temps, Rta: no.
 !Func que omple la matriu de posicions
-    PosMosaic:=[[[10,10,2],[30,10,2],[20,25,2],[20,35,2],           [10,10,1],[30,10,1],[20,25,1],[20,35,1],          [10,10,0],[30,10,0],[20,25,0],[20,35,0]],
-                [[10,10,2],[30,10,2],[10,30,2],[30,30,2],           [10,10,1],[30,10,1],[10,30,1],[30,30,1],          [10,10,0],[30,10,0],[10,30,0],[30,30,0]],
+    PosMosaic:=[[[10,10,2],[30,10,2],[20,25,2],[20,35,2],           [10,10,1],[30,10,1],[20,25,1],[20,35,1],          [10,10,0],[30,10,0],[20,25,0],[20,35,0],  [0,0,0],[0,0,0],[0,0,0]],
+                [[10,10,2],[30,10,2],[10,30,2],[30,30,2],           [10,10,1],[30,10,1],[10,30,1],[30,30,1],          [10,10,0],[30,10,0],[10,30,0],[30,30,0],  [0,0,0],[0,0,0],[0,0,0]],
                 [[5,15,2],[15,15,2],[25,15,2],[35,15,2],[20,35,2],  [5,15,1],[15,15,1],[25,15,1],[35,15,1],[20,35,1], [5,15,0],[15,15,0],[25,15,0],[35,15,0],[20,35,0]],
                 [[5,15,2],[35,15,2],[25,35,2],[5,25,2],[20,20,2],   [5,15,1],[35,15,1],[25,35,1],[5,25,1],[20,20,1],  [5,15,0],[35,15,0],[25,35,0],[5,25,0],[20,20,0]]];
     
@@ -157,7 +157,9 @@ ENDPROC
 PROC EnterNElements()
 !Func per entrer els elements per materia
   VAR num resposta;
-  FOR i FROM 1 TO 3 DO
+  VAR num i:=0;
+  !FOR i FROM 1 TO 3 DO
+  WHILE i < 4 DO
       TPErase;
       TPWrite "MAQUINA "\Num:=i;
       TPReadNum resposta,"Enter element count: ";
@@ -167,10 +169,14 @@ PROC EnterNElements()
         TPWrite "ENTER A VALID INPUT STUPID :( ";
         i:=i-1;
       ENDIF
-  ENDFOR
+      i:=i+1;
+  !ENDFOR
+  ENDWHILE
+
 
   !entrar prioritats
-  FOR i FROM 1 TO 3 DO
+  !FOR i FROM 1 TO 3 DO
+  WHILE i < 7 DO
       TPErase;
       TPWrite "MAQUINA "\Num:=i;
       TPReadNum resposta,"Enter priority level (form 1 to 3 being 1 the highest) pls: ";
@@ -180,8 +186,9 @@ PROC EnterNElements()
         TPWrite "ENTER A VALID INPUT STUPID :( ";
         i:=i-1;
       ENDIF
-
-  ENDFOR
+    i:=i+1;
+  ENDWHILE
+  !ENDFOR
 
 ENDPROC
 
@@ -214,7 +221,7 @@ PROC GetPaletsToMachine(byte PvtCinta3, byte PvtIndex)
 
     
     
-    IF materia{PvtAux2} <> CountMateriaM{PvtAux2} THEN 
+    IF materia{PvtAux2} <> CountMateriaM{PvtAux2} THEN  
         PvtAux2:=4;
     ENDIF
     
@@ -242,12 +249,12 @@ PROC GetPaletsToMachine(byte PvtCinta3, byte PvtIndex)
     ELSEIF PvtCinta3 = 1 THEN
         !demanar palet 1
         
-        ISignalDI Palet1,1,PwrCinta1;
+        !ISignalDI Palet1,1,PwrCinta1;
         RequestPalet{1}:=TRUE;
     ELSE
         !demanar palet 2
         
-        ISignalDI Palet2,1,PwrCinta2;
+        !ISignalDI Palet2,1,PwrCinta2;
         RequestPalet{2}:=TRUE;
     ENDIF
 !Anar a home mentres espera -> WaitReq
@@ -284,17 +291,17 @@ PROC CmpPty()
   auxiliar{2}:=100*priority{1}+10*priority{2}+priority{3};
   TEST auxiliar{2}
     CASE 123:
-      ComputePriority := "123";
+      ComputePriority := [1,2,3];
     CASE 132:
-      ComputePriority := "123";
+      ComputePriority := [1,2,3];
     CASE 213:
-      ComputePriority := "213";
+      ComputePriority := [2,1,3];
     CASE 231:
-      ComputePriority := "312";
+      ComputePriority := [3,1,2];
     CASE 312:
-      ComputePriority := "231";
+      ComputePriority := [2,3,1];
     CASE 321:
-      ComputePriority := "321";
+      ComputePriority := [3,2,1];
     DEFAULT:
       err;
   ENDTEST
@@ -306,7 +313,8 @@ PROC GetMateria()
   VAR byte HighestPriority;
 !TODO: gestio demanar palets si no n0hi han i tema de deixar un a mitges
   IF FlagPaletWithStock{1} AND FlagPaletWithStock{2} AND FlagNoStock = FALSE THEN !no funciona el NOT
-    HighestPriority:= StrToByte(ComputePriority{Index}); !TODO: solve this
+    !HighestPriority:= StrToByte(ComputePriority{Index}); !TODO: solve this
+    HighestPriority:= ComputePriority{2}; !TODO: solve this
   ELSEIF FlagPaletWithStock{1} THEN
     HighestPriority:= 1;
     !request 2
