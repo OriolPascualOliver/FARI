@@ -1,3 +1,4 @@
+
  MODULE MainModule
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !   CODI FASE 3 jdrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
@@ -21,10 +22,6 @@
     CONST num offset_PUNTO{3} := [-10, -10, -10];
     CONST num Zoffset := 50; !PUNT SEGURETAT VERTICAL
     !Vars per contar els offsets i les distancies
-    CONST orient rot90:=[0.018282857,-0.891902348,0.451718292,-0.011248286];
-    !Valors quadratics per moure el rotor 90
-    CONST orient rot0:=[0.02082,-0.311179,0.95011,0.00495981];
-    !Valors quadratics per moure rotor pos 0
     VAR num LastPaletPos{2,3}:=[[0,0,2], [0,0,2]]; !NOTE: z=2 ja que hi han 2 nivells per treure i comenca des de dalt, quan z=0, ja s'han tret els 2 pisos de coses
     !array per guardar on es queda a despaletitzar {Last position as NPalet, XYZ}
     VAR bool RstLastPaletPos{2}:=[FALSE, FALSE];
@@ -40,12 +37,13 @@
     VAR byte SizeMosaic{4}:=[12, 12, 15, 15];
     !array per guardar patrons de peces a mosaic CW+C, + numero items (s'hagues pogut posar en una super matriu al estilo matrix btw)3
 
-    VAR byte PosMosaic{4,15,3}; ![x,y,z], [pos], [mosaic] TODO: revisar index posmosaic!
+    VAR byte PosMosaic{4,15,3}; ![x,y,z], [pos], [mosaic] FIXME: revisar index posmosaic!<-------------------------------
     ! a mega array for each position fuck yeah imagine that array (la controladora te 2gb de memoria i 1 de DRAM aixi que pot guardar 180 bytes)
 
     !--------------------  VARS  --------------------
     VAR bool Run :=TRUE;
     !bool per iniciar i parar el proces {Guarda l estat del palet}
+
     VAR num materia{3};
     !array per guardar qty de materia per caaçda matina
 
@@ -104,7 +102,7 @@ PROC Main()
   CmpPty;
   FillPosMosaic("CoolWay");
 
-  !CONNECT PwrCinta1 WITH Trp_Cinta1; !TODO: solve this
+  !CONNECT PwrCinta1 WITH Trp_Cinta1; !FIXME: solve this
   !ISignalDI Palet1,1,PwrCinta1;
 
   !CONNECT PwrCinta2 WITH Trp_Cinta2;
@@ -117,9 +115,14 @@ PROC Main()
         TPUI;
     ENDWHILE
     !mirar quin falta i demanar palet
-    
+    Run:=CountMateriaM{1}=materia{1} AND CountMateriaM{2}=materia{2} AND CountMateriaM{3}=materia{3};
+    !Guarda a Run si ja ha omplert tot
   ENDWHILE
-  TPErase;
+  PwrCinta1:=0;
+  PwrCinta2:=0;
+  !Apagar cintes i coses?
+TPErase
+
 
 
 ENDPROC
@@ -360,7 +363,7 @@ PROC GetMateria()
     WaitReq;
   ELSE 
     GetPaletsToMachine HighestPriority, 1;
-    WaitReq; !TODO: finish this (func que espera mentres no hi han palets)
+    WaitReq; !func que espera mentres no hi han palets
   
   ENDIF
 ENDFOR
@@ -394,7 +397,7 @@ PROC err()
   Stop;
 ENDPROC
 
-!Traps !TODO:SOLVE ARRAY
+!Traps !TODO:SOLVE ARRAY?
   TRAP Trp_Cinta1 !neets update
     DetectCinta1:=TRUE;
     mosaic0:=0;
