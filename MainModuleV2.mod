@@ -121,7 +121,7 @@ PROC Main()
   PwrCinta1:=0;
   PwrCinta2:=0;
   !Apagar cintes i coses?
-TPErase
+TPErase;
 
 
 
@@ -160,9 +160,9 @@ ENDPROC
 PROC EnterNElements()
 !Func per entrer els elements per materia
   VAR num resposta;
-  VAR num i:=0;
+  VAR num i:=1;
   !FOR i FROM 1 TO 3 DO
-  WHILE i < 4 DO
+  WHILE i <= 3 DO
       TPErase;
       TPWrite "MAQUINA "\Num:=i;
       TPReadNum resposta,"Enter element count: ";
@@ -178,8 +178,9 @@ PROC EnterNElements()
 
 
   !entrar prioritats
+  i:=1;
   !FOR i FROM 1 TO 3 DO
-  WHILE i < 7 DO
+  WHILE i <= 3 DO
       TPErase;
       TPWrite "MAQUINA "\Num:=i;
       TPReadNum resposta,"Enter priority level (form 1 to 3 being 1 the highest) pls: ";
@@ -400,12 +401,11 @@ ENDPROC
 !Traps !TODO:SOLVE ARRAY?
   TRAP Trp_Cinta1 !neets update
     DetectCinta1:=TRUE;
-    mosaic0:=0;
   ENDTRAP
 
   TRAP Trp_Cinta2
     DetectCinta2:=TRUE;
-    mosaic1:=0;
+
   ENDTRAP !end missing
 
 !Funcs aborrides de moviments a maquines i punts i tal
