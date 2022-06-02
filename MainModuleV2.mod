@@ -102,11 +102,11 @@ PROC Main()
   CmpPty;
   FillPosMosaic("CoolWay");
 
-  !CONNECT PwrCinta1 WITH Trp_Cinta1; !FIXME: solve this
-  !ISignalDI Palet1,1,PwrCinta1;
+    CONNECT PwrCinta1 WITH Trp_Cinta10; !FIXME: solve this
+    ISignalDI Palet10,1,PwrCinta1;
 
-  !CONNECT PwrCinta2 WITH Trp_Cinta2;
-  !ISignalDI Palet2,1,PwrCinta2;
+    CONNECT PwrCinta2 WITH Trp_Cinta20;
+    ISignalDI Palet20,1,PwrCinta2;
   !activa 2 cintes
 
   WHILE Run DO
@@ -115,7 +115,7 @@ PROC Main()
         TPUI;
     ENDWHILE
     !mirar quin falta i demanar palet
-    Run:=CountMateriaM{1}=materia{1} AND CountMateriaM{2}=materia{2} AND CountMateriaM{3}=materia{3};
+    Run:=CountMateriaM{1}=materia{1} AND CountMateriaM{2}=materia{2} AND CountMateriaM{3}=materia{3} OR TRUE;
     !Guarda a Run si ja ha omplert tot
   ENDWHILE
   PwrCinta1:=0;
@@ -170,6 +170,7 @@ PROC EnterNElements()
         materia{i}:=resposta;
       ELSE
         TPWrite "ENTER A VALID INPUT STUPID :( ";
+        WaitTime 2;
         i:=i-1;
       ENDIF
       i:=i+1;
@@ -201,6 +202,7 @@ PROC CheckNElements()
   auxiliar{1}:=(Priority{1} * priority{2} * priority{3}); !hem fet el producte per veure si tenen nums de prty diferents i els adequats, i m a genius tnku
   WHILE( auxiliar{1} <> 6) DO 
     TPWrite "ENTER A VALID PRIORITY INPUT YOU BASTARD :(";
+    WaitTime 2;
     EnterNElements;
     auxiliar{1}:=(Priority{1} * priority{2} * priority{3});
   ENDWHILE
@@ -399,11 +401,11 @@ PROC err()
 ENDPROC
 
 !Traps !TODO:SOLVE ARRAY?
-  TRAP Trp_Cinta1 !neets update
+  TRAP Trp_Cinta10 !neets update
     DetectCinta1:=TRUE;
   ENDTRAP
 
-  TRAP Trp_Cinta2
+  TRAP Trp_Cinta20
     DetectCinta2:=TRUE;
 
   ENDTRAP !end missing
