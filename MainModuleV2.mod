@@ -1,5 +1,4 @@
-
- MODULE MainModule
+MODULE MainModule
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !   CODI FASE 3 jdrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
     !
@@ -8,10 +7,11 @@
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     !0) definicio i ini Vars
+    !Ho sento Oriol del futur :(
 
     !--------------------   CINEMATIC DEFINITIONS --------------------
     CONST robtarget HOME:=[[516.54,-11.81,715.94],[0.714516,0.0199544,0.699323,0.00399707],[-1,0,0,1],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
-    CONST robtarget Ppalet1:=[[765.31,274.84,159.06],[0.02082,-0.311179,-0.95011,0.00495981],[0,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+    CONST robtarget Ppalet1:=[[665.31,274.84,159.06],[0.02082,-0.311179,-0.95011,0.00495981],[0,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
     CONST robtarget Ppalet2:=[[465.31,274.84,159.06],[0.02082,-0.311179,-0.95011,0.00495981],[0,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
     CONST robtarget PUNTO1:=[[-9.71,-458.23,282.62],[0.0487016,-0.732289,-0.678123,0.0391261],[-2,-1,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
     CONST robtarget PUNTO2:=[[-66.12,488.43,69.72],[0.0545846,0.782406,-0.617839,0.0560026],[1,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
@@ -22,6 +22,10 @@
     CONST num offset_PUNTO{3} := [-10, -10, -10];
     CONST num Zoffset := 50; !PUNT SEGURETAT VERTICAL
     !Vars per contar els offsets i les distancies
+    CONST orient rot90:=[0.018282857,-0.891902348,0.451718292,-0.011248286];
+    !Valors quadratics per moure el rotor 90
+    CONST orient rot0:=[0.02082,-0.311179,0.95011,0.00495981];
+    !Valors quadratics per moure rotor pos 0
     VAR num LastPaletPos{2,3}:=[[0,0,2], [0,0,2]]; !NOTE: z=2 ja que hi han 2 nivells per treure i comenca des de dalt, quan z=0, ja s'han tret els 2 pisos de coses
     !array per guardar on es queda a despaletitzar {Last position as NPalet, XYZ}
     VAR bool RstLastPaletPos{2}:=[FALSE, FALSE];
@@ -37,13 +41,12 @@
     VAR byte SizeMosaic{4}:=[12, 12, 15, 15];
     !array per guardar patrons de peces a mosaic CW+C, + numero items (s'hagues pogut posar en una super matriu al estilo matrix btw)3
 
-    VAR byte PosMosaic{4,15,3}; ![x,y,z], [pos], [mosaic] FIXME: revisar index posmosaic!<-------------------------------
+    VAR byte PosMosaic{4,15,3}; ![x,y,z], [pos], [mosaic] TODO: revisar index posmosaic!
     ! a mega array for each position fuck yeah imagine that array (la controladora te 2gb de memoria i 1 de DRAM aixi que pot guardar 180 bytes)
 
     !--------------------  VARS  --------------------
     VAR bool Run :=TRUE;
     !bool per iniciar i parar el proces {Guarda l estat del palet}
-
     VAR num materia{3};
     !array per guardar qty de materia per caaçda matina
 
@@ -86,6 +89,7 @@
     VAR byte CmpMachineOut;
     !Var sortida de compute machine (no tira el return)
     
+    
     !------------ VARS "Privades" ------------
     VAR byte PvtAux1:=0; !func 1
     VAR byte PvtAux2:=0;
@@ -102,27 +106,24 @@ PROC Main()
   CmpPty;
   FillPosMosaic("CoolWay");
 
-    CONNECT PwrCinta1 WITH Trp_Cinta10; !FIXME: solve this
-    ISignalDI Palet10,1,PwrCinta1;
+  CONNECT PwrCinta1 WITH Trp_Cinta1; !TODO: solve this
+  ISignalDI Palet1,1,PwrCinta1;
 
-    CONNECT PwrCinta2 WITH Trp_Cinta20;
-    ISignalDI Palet20,1,PwrCinta2;
+  CONNECT PwrCinta2 WITH Trp_Cinta2;
+  ISignalDI Palet2,1,PwrCinta2;
   !activa 2 cintes
-
+    
+    !TEST
+    DetectCinta1:=TRUE;
   WHILE Run DO
     WHILE (DetectCinta1 OR DetectCinta2) DO !mentres hi hagi algun palet
         GetMateria; !agafa la materia
         TPUI;
     ENDWHILE
     !mirar quin falta i demanar palet
-    Run:=CountMateriaM{1}=materia{1} AND CountMateriaM{2}=materia{2} AND CountMateriaM{3}=materia{3} OR TRUE;
-    !Guarda a Run si ja ha omplert tot
+    
   ENDWHILE
-  PwrCinta1:=0;
-  PwrCinta2:=0;
-  !Apagar cintes i coses?
-TPErase;
-
+  TPErase;
 
 
 ENDPROC
@@ -131,6 +132,7 @@ ENDPROC
 !2) Funcs aux
 
 PROC CmpMachine(byte PvtCinta, num PvtIndex1)
+
 !func que retorna el tipus de materia per trobar la estaico, chorras, FALTA ACABAr
   
   TEST Mosaic{PvtIndex1}
@@ -162,7 +164,7 @@ PROC EnterNElements()
   VAR num resposta;
   VAR num i:=1;
   !FOR i FROM 1 TO 3 DO
-  WHILE i <= 3 DO
+  WHILE i < 4 DO
       TPErase;
       TPWrite "MAQUINA "\Num:=i;
       TPReadNum resposta,"Enter element count: ";
@@ -170,7 +172,6 @@ PROC EnterNElements()
         materia{i}:=resposta;
       ELSE
         TPWrite "ENTER A VALID INPUT STUPID :( ";
-        WaitTime 2;
         i:=i-1;
       ENDIF
       i:=i+1;
@@ -179,16 +180,16 @@ PROC EnterNElements()
 
 
   !entrar prioritats
-  i:=1;
   !FOR i FROM 1 TO 3 DO
-  WHILE i <= 3 DO
+  WHILE i < 7 DO
       TPErase;
-      TPWrite "MAQUINA "\Num:=i;
+      TPWrite "MAQUINA "\Num:=i-3;
       TPReadNum resposta,"Enter priority level (form 1 to 3 being 1 the highest) pls: ";
       IF resposta > 0 AND resposta < 4 THEN
-        priority{i}:=resposta;
+        priority{i-3}:=resposta;
       ELSE
         TPWrite "ENTER A VALID INPUT STUPID :( ";
+        WaitTime 1.5;
         i:=i-1;
       ENDIF
     i:=i+1;
@@ -202,7 +203,7 @@ PROC CheckNElements()
   auxiliar{1}:=(Priority{1} * priority{2} * priority{3}); !hem fet el producte per veure si tenen nums de prty diferents i els adequats, i m a genius tnku
   WHILE( auxiliar{1} <> 6) DO 
     TPWrite "ENTER A VALID PRIORITY INPUT YOU BASTARD :(";
-    WaitTime 2;
+    WaitTime 1.5;
     EnterNElements;
     auxiliar{1}:=(Priority{1} * priority{2} * priority{3});
   ENDWHILE
@@ -210,7 +211,7 @@ PROC CheckNElements()
 ENDPROC
 
 PROC GetPaletsToMachine(byte PvtCinta3, byte PvtIndex)
-!num tipus,robtarget pallet
+    !num tipus,robtarget pallet
     !Flipa amb la recursivitat chavaless
     
     BackToZero(1);
@@ -218,15 +219,17 @@ PROC GetPaletsToMachine(byte PvtCinta3, byte PvtIndex)
     !Reset if needed
     TEST PvtCinta3 
     CASE 1:
-        GoToPoint Ppalet1, PosMosaic{1, PvtIndex, Mosaic{PvtCinta3}}, PosMosaic{2, PvtIndex, Mosaic{PvtCinta3}}, PosMosaic{3, PvtIndex, Mosaic{PvtCinta3}}*10 ;
+        GoToPoint Ppalet1, PosMosaic{1, PvtIndex, Mosaic{PvtCinta3}}, PosMosaic{2, PvtIndex, Mosaic{PvtCinta3}}, PosMosaic{3, PvtIndex, Mosaic{PvtCinta3}};
     CASE 2: 
-        GoToPoint Ppalet2, PosMosaic{1, PvtIndex, Mosaic{PvtCinta3}}, PosMosaic{2, PvtIndex, Mosaic{PvtCinta3}}, PosMosaic{3, PvtIndex, Mosaic{PvtCinta3}}*10;
+        GoToPoint Ppalet2, PosMosaic{1, PvtIndex, Mosaic{PvtCinta3}}, PosMosaic{2, PvtIndex, Mosaic{PvtCinta3}}, PosMosaic{3, PvtIndex, Mosaic{PvtCinta3}};
     ENDTEST
     !PROC CmpMachine(byte PvtCinta, num PvtIndex)
+    !CmpMachine(1, 2);
     PvtAux2:= CmpMachineOut;
+    PvtAux2:=1;
 
     
-    
+    !PETA
     IF materia{PvtAux2} <> CountMateriaM{PvtAux2} THEN  
         PvtAux2:=4;
     ENDIF
@@ -366,7 +369,7 @@ PROC GetMateria()
     WaitReq;
   ELSE 
     GetPaletsToMachine HighestPriority, 1;
-    WaitReq; !func que espera mentres no hi han palets
+    WaitReq; !TODO: finish this (func que espera mentres no hi han palets)
   
   ENDIF
 ENDFOR
@@ -396,18 +399,17 @@ ENDPROC
 
 PROC err()
 !something went really wrong bro
-  TPWrite "-- ERROR 418 I'm a teapot. Can t'make cofee :/ --";
+  TPWrite "-- ERROR 418 I'm a teapot. Can t'make cofee :/ --";                  
   Stop;
 ENDPROC
 
-!Traps !TODO:SOLVE ARRAY?
-  TRAP Trp_Cinta10 !neets update
+!Traps !TODO:SOLVE ARRAY
+  TRAP Trp_Cinta1 !neets update
     DetectCinta1:=TRUE;
   ENDTRAP
 
-  TRAP Trp_Cinta20
+  TRAP Trp_Cinta2
     DetectCinta2:=TRUE;
-
   ENDTRAP !end missing
 
 !Funcs aborrides de moviments a maquines i punts i tal
