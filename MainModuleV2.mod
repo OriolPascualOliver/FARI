@@ -11,16 +11,18 @@ MODULE MainModule
 
     !--------------------   CINEMATIC DEFINITIONS --------------------
     CONST robtarget HOME:=[[516.54,-11.81,715.94],[0.714516,0.0199544,0.699323,0.00399707],[-1,0,0,1],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
-    CONST robtarget Ppalet1:=[[665.31,274.84,159.06],[0.02082,-0.311179,-0.95011,0.00495981],[0,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
-    CONST robtarget Ppalet2:=[[465.31,274.84,159.06],[0.02082,-0.311179,-0.95011,0.00495981],[0,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+    CONST robtarget Ppalet1:=[[665.31,174.84,159.06],[0.02082,-0.311179,-0.95011,0.00495981],[0,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+    CONST robtarget Ppalet2:=[[465.31,174.84,159.06],[0.02082,-0.311179,-0.95011,0.00495981],[0,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
     CONST robtarget PUNTO1:=[[-9.71,-458.23,282.62],[0.0487016,-0.732289,-0.678123,0.0391261],[-2,-1,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
     CONST robtarget PUNTO2:=[[-66.12,488.43,69.72],[0.0545846,0.782406,-0.617839,0.0560026],[1,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
     CONST robtarget PUNTO3:=[[-516.33,94.41,124.87],[0.00252886,0.999052,-0.0406592,0.015331],[1,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
-    CONST robtarget PDiscard:=[[20.31,274.84,159.06],[0.02082,-0.311179,-0.95011,0.00495981],[0,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+    CONST robtarget PDiscard:=[[100,500,160],[0.02082,-0.311179,-0.95011,0.00495981],[0,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
     !Vars de posicio'
-    CONST num offset_Ppalet{3} := [0,-10,-10];
-    CONST num offset_PUNTO{3} := [-10, -10, -10];
-    CONST num Zoffset := 50; !PUNT SEGURETAT VERTICAL
+    !CONST num offset_Ppalet{3} := [0,-10,-10];
+    !CONST num offset_PUNTO{3} := [-10, -10, -10];
+    CONST num offset_Ppalet{3} := [0,0,0];
+    CONST num offset_PUNTO{3} := [0, 0, 0];
+    CONST num Zoffset := 20; !PUNT SEGURETAT VERTICAL
     !Vars per contar els offsets i les distancies
     CONST orient rot90:=[0.018282857,-0.891902348,0.451718292,-0.011248286];
     !Valors quadratics per moure el rotor 90
@@ -93,6 +95,7 @@ MODULE MainModule
     !------------ VARS "Privades" ------------
     VAR byte PvtAux1:=0; !func 1
     VAR byte PvtAux2:=0;
+    VAR byte PvtAux3:=0; !byte detecio cinta
 
 
 !1) Main func
@@ -113,8 +116,6 @@ PROC Main()
   ISignalDI Palet2,1,PwrCinta2;
   !activa 2 cintes
     
-    !TEST
-    DetectCinta1:=TRUE;
   WHILE Run DO
     WHILE (DetectCinta1 OR DetectCinta2) DO !mentres hi hagi algun palet
         GetMateria; !agafa la materia
@@ -135,7 +136,7 @@ PROC CmpMachine(byte PvtCinta, num PvtIndex1)
 
 !func que retorna el tipus de materia per trobar la estaico, chorras, FALTA ACABAr
   
-  TEST Mosaic{PvtIndex1}
+  TEST Mosaic{PvtCinta}
   CASE 1:
     PvtAux1:=Mosaic1{PvtIndex1};
   CASE 2:
@@ -198,6 +199,23 @@ PROC EnterNElements()
 
 ENDPROC
 
+PROC EnterTypeOfMosaic(byte PvtAux3)
+!Func per entrer el tipus de mosaic
+  VAR num resposta;
+  TPErase;
+  TPWrite "Palet detectat a Cinta "\Num:=PvtAux3;
+  TPReadNum resposta,"Enter mosaic type (from 1 to 4): ";
+  IF resposta > 0 AND resposta < 5 THEN
+    Mosaic{PvtAux3}:=resposta;
+  ELSE
+    TPWrite "ENTER A VALID INPUT STUPID :( ";
+    WaitTime 1.5;
+    EnterTypeOfMosaic PvtAux3;
+  ENDIF
+  WaitTime 1.5;
+ 
+ENDPROC
+
 PROC CheckNElements()
 !Func per validar les dades entrades
   auxiliar{1}:=(Priority{1} * priority{2} * priority{3}); !hem fet el producte per veure si tenen nums de prty diferents i els adequats, i m a genius tnku
@@ -223,14 +241,12 @@ PROC GetPaletsToMachine(byte PvtCinta3, byte PvtIndex)
     CASE 2: 
         GoToPoint Ppalet2, PosMosaic{1, PvtIndex, Mosaic{PvtCinta3}}, PosMosaic{2, PvtIndex, Mosaic{PvtCinta3}}, PosMosaic{3, PvtIndex, Mosaic{PvtCinta3}};
     ENDTEST
-    !PROC CmpMachine(byte PvtCinta, num PvtIndex)
-    !CmpMachine(1, 2);
-    PvtAux2:= CmpMachineOut;
-    PvtAux2:=1;
+    !va a la cinta que toqui a la pos que toqui
 
-    
-    !PETA
-    IF materia{PvtAux2} <> CountMateriaM{PvtAux2} THEN  
+    CmpMachine PvtCinta3, PvtIndex;
+    PvtAux2:= CmpMachineOut;
+
+    IF materia{PvtAux2} = CountMateriaM{PvtAux2} THEN  
         PvtAux2:=4;
     ENDIF
     
@@ -406,10 +422,12 @@ ENDPROC
 !Traps !TODO:SOLVE ARRAY
   TRAP Trp_Cinta1 !neets update
     DetectCinta1:=TRUE;
+    EnterTypeOfMosaic 1;
   ENDTRAP
 
   TRAP Trp_Cinta2
     DetectCinta2:=TRUE;
+    EnterTypeOfMosaic 2;
   ENDTRAP !end missing
 
 !Funcs aborrides de moviments a maquines i punts i tal
