@@ -482,9 +482,9 @@ ENDPROC
   PROC GoToPoint(robtarget PvtPTG, byte PvtOFST1, byte PvtOFST2, byte PvtOFST3) !found num, expected dim aixi que poso vars individuals i ja
     !INPUT: PointToGo
       !func que va qualsevol pos del palet de manera guai
-      MoveJ Offs(PvtPTG, offset_Ppalet{1}+PvtOFST1, offset_Ppalet{2}+PvtOFST2, offset_Ppalet{3}+Zoffset+PvtOFST3), v500, fine, tool0;
-      MoveL Offs(PvtPTG, offset_Ppalet{1}+PvtOFST1, offset_Ppalet{2}+PvtOFST2, offset_Ppalet{3}+PvtOFST3), v100, fine, tool0;
-      MoveL Offs(PvtPTG, offset_Ppalet{1}+PvtOFST1, offset_Ppalet{2}+PvtOFST2, offset_Ppalet{3}+Zoffset+PvtOFST3), v100, fine, tool0;
+      MoveJ Offs(PvtPTG, 10*offset_Ppalet{1}+PvtOFST1, 10*offset_Ppalet{2}+PvtOFST2, 10*offset_Ppalet{3}+Zoffset+PvtOFST3), v500, fine, tool0;
+      MoveL Offs(PvtPTG, 10*offset_Ppalet{1}+PvtOFST1, 10*offset_Ppalet{2}+PvtOFST2, 10*offset_Ppalet{3}+PvtOFST3), v100, fine, tool0;
+      MoveL Offs(PvtPTG, 10*offset_Ppalet{1}+PvtOFST1, 10*offset_Ppalet{2}+PvtOFST2, 10*offset_Ppalet{3}+Zoffset+PvtOFST3), v100, fine, tool0;
   ENDPROC
   
   PROC GoToHome()
