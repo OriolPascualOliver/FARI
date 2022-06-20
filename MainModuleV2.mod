@@ -10,24 +10,20 @@ MODULE MainModule
     !Ho sento Oriol del futur :(
 
     !--------------------   CINEMATIC DEFINITIONS --------------------
-    CONST robtarget HOME:=[[516.54,-11.81,715.94],[0.714516,0.0199544,0.699323,0.00399707],[-1,0,0,1],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
-    CONST robtarget Ppalet1:=[[665.31,174.84,159.06],[0.02082,-0.311179,-0.95011,0.00495981],[0,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
-    CONST robtarget Ppalet2:=[[465.31,174.84,159.06],[0.02082,-0.311179,-0.95011,0.00495981],[0,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
-    CONST robtarget PUNTO1:=[[-9.71,-458.23,282.62],[0.0487016,-0.732289,-0.678123,0.0391261],[-2,-1,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
-    CONST robtarget PUNTO2:=[[-66.12,488.43,69.72],[0.0545846,0.782406,-0.617839,0.0560026],[1,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
-    CONST robtarget PUNTO3:=[[-516.33,94.41,124.87],[0.00252886,0.999052,-0.0406592,0.015331],[1,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+    CONST robtarget HOME:=[[500,-10,700],[0.714516,0.0199544,0.699323,0.00399707],[-1,0,0,1],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+    CONST robtarget Ppalet1:=[[650,175,160],[0.02082,-0.311179,-0.95011,0.00495981],[0,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+    CONST robtarget Ppalet2:=[[450,175,160],[0.02082,-0.311179,-0.95011,0.00495981],[0,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+    CONST robtarget PUNTO1:=[[-10,-500,300],[0.0487016,-0.732289,-0.678123,0.0391261],[-2,-1,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+    CONST robtarget PUNTO2:=[[-50,500,60],[0.0545846,0.782406,-0.617839,0.0560026],[1,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+    CONST robtarget PUNTO3:=[[-500,100,125],[0.00252886,0.999052,-0.0406592,0.015331],[1,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
     CONST robtarget PDiscard:=[[100,500,160],[0.02082,-0.311179,-0.95011,0.00495981],[0,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
     !Vars de posicio'
-    !CONST num offset_Ppalet{3} := [0,-10,-10];
-    !CONST num offset_PUNTO{3} := [-10, -10, -10];
-    CONST num offset_Ppalet{3} := [0,0,0];
-    CONST num offset_PUNTO{3} := [0, 0, 0];
-    CONST num Zoffset := 20; !PUNT SEGURETAT VERTICAL
+    CONST num offset_Ppalet{3} := [0,-10,-10];
+    CONST num offset_PUNTO{3} := [-10, -10, -10];
+ 
+    CONST num Zoffset := 100; !PUNT SEGURETAT VERTICAL
     !Vars per contar els offsets i les distancies
-    CONST orient rot90:=[0.018282857,-0.891902348,0.451718292,-0.011248286];
-    !Valors quadratics per moure el rotor 90
-    CONST orient rot0:=[0.02082,-0.311179,0.95011,0.00495981];
-    !Valors quadratics per moure rotor pos 0
+
     VAR num LastPaletPos{2,3}:=[[0,0,2], [0,0,2]]; !NOTE: z=2 ja que hi han 2 nivells per treure i comenca des de dalt, quan z=0, ja s'han tret els 2 pisos de coses
     !array per guardar on es queda a despaletitzar {Last position as NPalet, XYZ}
     VAR bool RstLastPaletPos{2}:=[FALSE, FALSE];
@@ -120,7 +116,11 @@ PROC Main()
   CONNECT PwrCinta2 WITH Trp_Cinta2;
   ISignalDI Palet2,1,PwrCinta2;
   !activa 2 cintes
-    
+  SetDO EnCinta1, 1;
+  SetDO EnCinta2, 1;
+  !es desactiven amb la interrupció de la deteció de la cinta
+  
+  
   WHILE Run DO
     WHILE (DetectCinta1 OR DetectCinta2) DO !mentres hi hagi algun palet
         GetMateria; !agafa la materia
@@ -354,7 +354,7 @@ PROC GetPaletsToMachine(byte PvtCinta3, byte PvtIndex)
     PvtAux2:= CmpMachineOut;
 
     IF materia{PvtAux2} = CountMateriaM{PvtAux2} THEN  
-        PvtAux2:=4;
+        PvtAux2:=4; !Discard
     ENDIF
     
     TEST PvtAux2
@@ -380,13 +380,12 @@ PROC GetPaletsToMachine(byte PvtCinta3, byte PvtIndex)
         GetPaletsToMachine PvtCinta3, PvtIndex;
     ELSEIF PvtCinta3 = 1 THEN
         !demanar palet 1
+        SetDO EnCinta1, 1;
         
-        !ISignalDI Palet1,1,PwrCinta1;
         RequestPalet{1}:=TRUE;
     ELSE
         !demanar palet 2
-        
-        !ISignalDI Palet2,1,PwrCinta2;
+        SetDO EnCinta2, 1;
         RequestPalet{2}:=TRUE;
     ENDIF
 !Anar a home mentres espera -> WaitReq
@@ -466,11 +465,15 @@ ENDPROC
 !Traps !TODO:SOLVE ARRAY
   TRAP Trp_Cinta1 !neets update
     DetectCinta1:=TRUE;
+    SetDO EnCinta1, 0;
+    RequestPalet{1}:=FALSE;
     EnterTypeOfMosaic 1;
   ENDTRAP
 
   TRAP Trp_Cinta2
     DetectCinta2:=TRUE;
+    SetDO EnCinta2, 0;
+    RequestPalet{2}:=FALSE;
     EnterTypeOfMosaic 2;
   ENDTRAP !end missing
 
@@ -481,6 +484,7 @@ ENDPROC
       !func que va qualsevol pos del palet de manera guai
       MoveJ Offs(PvtPTG, offset_Ppalet{1}+PvtOFST1, offset_Ppalet{2}+PvtOFST2, offset_Ppalet{3}+Zoffset+PvtOFST3), v500, fine, tool0;
       MoveL Offs(PvtPTG, offset_Ppalet{1}+PvtOFST1, offset_Ppalet{2}+PvtOFST2, offset_Ppalet{3}+PvtOFST3), v100, fine, tool0;
+      MoveL Offs(PvtPTG, offset_Ppalet{1}+PvtOFST1, offset_Ppalet{2}+PvtOFST2, offset_Ppalet{3}+Zoffset+PvtOFST3), v100, fine, tool0;
   ENDPROC
   
   PROC GoToHome()
