@@ -23,7 +23,6 @@ MODULE MainModule
  
     CONST num Zoffset := 100; !PUNT SEGURETAT VERTICAL
     !Vars per contar els offsets i les distancies
-
     VAR num LastPaletPos{2,3}:=[[0,0,2], [0,0,2]]; !NOTE: z=2 ja que hi han 2 nivells per treure i comenca des de dalt, quan z=0, ja s'han tret els 2 pisos de coses
     !array per guardar on es queda a despaletitzar {Last position as NPalet, XYZ}
     VAR bool RstLastPaletPos{2}:=[FALSE, FALSE];
@@ -92,6 +91,9 @@ MODULE MainModule
     
     VAR byte State{3}:=[1,2,3];
     !var per guardar quina cinta esta activa
+
+    VAR byte Unload:=1;
+    !var per guardar quina iteracio de item a maquina es (valor ini=0 per determinar que encara no ha comencat)
     
     !------------ VARS "Privades" ------------
     VAR byte PvtAux1:=0; !func 1
@@ -123,7 +125,7 @@ PROC Main()
   
   WHILE Run DO
     WHILE (DetectCinta1 OR DetectCinta2) DO !mentres hi hagi algun palet
-        GetMateria; !agafa la materia
+        GetMateriaMk1; !agafa la materia
         TPUI;
     ENDWHILE
     !mirar quin falta i demanar palet
@@ -148,7 +150,10 @@ PROC EnterNElements()
       TPWrite "MAQUINA "\Num:=i;
       TPReadNum resposta,"Enter element count: ";
       IF resposta = 69420 THEN
-        TrucoEN:=TRUE;!Srooy in advanced, function para probar como si fuera GTA
+        !Srooy in advanced, function para probar como si fuera GTA
+        materia:=[1,2,3];
+        priority:=[1,2,3];
+        TPWrite "-------Truco UNLOCKED-------";
         GOTO TrucoGTA;
       ELSEIF resposta > 0 THEN
         materia{i}:=resposta;
@@ -178,17 +183,11 @@ PROC EnterNElements()
   ENDWHILE
   !ENDFOR
   TrucoGTA:
-  IF TrucoEN THEN
-      TPWrite "-------Truco UNLOCKED-------";
-    materia:=[1,2,3];
-    priority:=[1,2,3];
-    WaitTime 0.5;
-    !Per finalitats de testing
-  ENDIF
 ENDPROC
 
 PROC CheckNElements()
 !Func per validar les dades entrades
+ShowMe "<CheckNElements>";
   auxiliar{1}:=(Priority{1} * priority{2} * priority{3}); !hem fet el producte per veure si tenen nums de prty diferents i els adequats, i m a genius tnku
   WHILE( auxiliar{1} <> 6) DO 
     TPWrite "ENTER A VALID PRIORITY INPUT YOU BASTARD :(";
@@ -196,12 +195,14 @@ PROC CheckNElements()
     EnterNElements;
     auxiliar{1}:=(Priority{1} * priority{2} * priority{3});
   ENDWHILE
+  ShowMe "</CheckNElements>";
     
 ENDPROC
 
 PROC CmpPty()
 ! Func que calcula la prioritat d una manera super pro
   ! aux 1->3
+  ShowMe "<CmpPty>";
   auxiliar{2}:=100*priority{1}+10*priority{2}+priority{3};
   TEST auxiliar{2}
     CASE 123:
@@ -219,35 +220,43 @@ PROC CmpPty()
     DEFAULT:
       err;
   ENDTEST
+  ShowMe "</CmpPty>";
+  ShowMe ComputePriority;
 ENDPROC
 
-PROC GetMateria()
-!Here is where the magic happens btch winkwink 
+PROC GetMateriaV0()!NOT THIS ONE
+    !Here is where the magic happens btch winkwink 
   VAR byte Index:=1;
   VAR byte HighestPriority;
-  ShowMe "--- Entered GetMateria";
-!TODO: gestio demanar palets si no n0hi han i tema de deixar un a mitges
+  ShowMe "<GetMateria>";
+
+    !No se si aixo esta be
   IF FlagPaletWithStock{1} AND FlagPaletWithStock{2} AND FlagNoStock = FALSE THEN !no funciona el NOT
-    !HighestPriority:= StrToByte(ComputePriority{Index}); !TODO: solve this
-    HighestPriority:= ComputePriority{1}; !TODO: solve this
-  ELSEIF FlagPaletWithStock{1} THEN
+    HighestPriority:= ComputePriority{1};
+  ELSEIF FlagPaletWithStock{1} THEN !NoloseRick, compute priority es la maquina amb maxima prioritat i despres pasa a cinta amb mes prioritat, solve thiss
     HighestPriority:= 1;
     !request 2
   ELSEIF FlagPaletWithStock{2} THEN
     HighestPriority:= 2;
     !request1
   ELSE
-    HighestPriority:=1;
+    HighestPriority:=1; !TODO: RLY needed??
     WaitReq;
+
+    !Other option:
+    err;
   ENDIF
+  ShowMe "GetMateria>HigestPriority=";
   ShowMe ByteToStr(HighestPriority);
   WaitTime 0.5;
 
   !This is to find the cinta w more intresting parts (CASE BOTH 0 HANDELED BY THE FACT THAT THEY ARE EQUAL TO ZEROW madafaka)
   FOR j FROM 1 TO 2 DO !AQUI TENIM BYTE (NO POT SER BYTE; CAL ITERAR)
     TEST Mosaic{j}
+    CASE 0:
+        ShowMe "Cinta not available :("
     CASE 1:
-      FOR k FROM 1 TO 4 DO
+      FOR k FROM 1 TO SizeMosaic{1} DO
         IF HighestPriority = Mosaic1{k} THEN
           Incr auxiliar{j+1};
         ENDIF
@@ -258,18 +267,6 @@ PROC GetMateria()
             Incr auxiliar{j+1};
         ENDIF
       ENDFOR
-    CASE 3:
-      FOR k FROM 1 TO 4 DO
-        IF HighestPriority = Mosaic3{k} THEN
-            Incr auxiliar{j+1};
-        ENDIF
-      ENDFOR
-    DEFAULT:
-     FOR k FROM 1 TO 4 DO
-        IF HighestPriority = Mosaic4{k} THEN
-            Incr auxiliar{j+1};
-        ENDIF
-     ENDFOR
     ENDTEST
     !/CalcAlgorism
 
@@ -282,15 +279,81 @@ PROC GetMateria()
     WaitReq; !TODO: finish this (func que espera mentres no hi han palets)
   
   ENDIF
-ENDFOR
+ ENDFOR
   
     !tot entrat i prioritat calculada
   
   !aqui sabrem que ha d agafar i per a quina maquina
 
+  ShowMe "</GetMateria>"
 ENDPROC
 
+PROC GetMateriaMk1() !NEW VERSION OF GETMATERIA
+    !Here is where the magic happens btch winkwink 
+  VAR byte Index:=1;
+  VAR byte HighestPriority;
+  !Unload guarda quina maquina ha omplert
+  ShowMe "<GetMateriaMk1>";
+  IF Unload = 0 OR Unload > 3 THEN
+    Unload:=1;
+    !First Time
+  ENDIF
+  HighestPriority:= ComputePriority{Unload};
 
+  ShowMe "GetMateria>HigestPriority=";
+  ShowMe ByteToStr(HighestPriority);
+  WaitTime 0.5;
+
+  !This is to find the cinta w more intresting parts (CASE BOTH 0 HANDELED BY THE FACT THAT THEY ARE EQUAL TO ZEROW madafaka)
+  FOR j FROM 1 TO 2 DO !AQUI TENIM BYTE (NO POT SER BYTE; CAL ITERAR)
+    TEST Mosaic{j}
+    CASE 0:
+      !Cinta Not avilable
+    CASE 1:
+      FOR k FROM 1 TO SizeMosaic{Mosaic{j}} DO
+        IF HighestPriority = Mosaic1{k} THEN
+          Incr auxiliar{j+1};
+        ENDIF
+      ENDFOR
+    CASE 2:
+      FOR k FROM 1 TO SizeMosaic{Mosaic{j}} DO
+        IF HighestPriority = Mosaic2{k} THEN
+            Incr auxiliar{j+1};
+        ENDIF
+      ENDFOR
+    CASE 3:
+      FOR k FROM 1 TO SizeMosaic{Mosaic{j}} DO
+        IF HighestPriority = Mosaic3{k} THEN
+            Incr auxiliar{j+1};
+        ENDIF
+      ENDFOR
+    CASE 4:
+     FOR k FROM 1 TO SizeMosaic{Mosaic{j}} DO
+        IF HighestPriority = Mosaic4{k} THEN
+            Incr auxiliar{j+1};
+        ENDIF
+     ENDFOR
+    DEFAULT:
+    err;
+    ENDTEST
+    !/CalcAlgorism-> se ha guardado en auxiliar{2i3} la suma de los items mas prioritarios para decidir que cinta pillar
+
+
+  IF auxiliar{2} > auxiliar{3} THEN
+    GetPaletsToMachine 1, 1; !cinta1
+    WaitReq;
+  ELSEIF auxiliar{2} < auxiliar{3}
+    GetPaletsToMachine 2, 1; !cinta 2
+    WaitReq; !TODO: finish this (func que espera mentres no hi han palets)
+  ELSE
+    !Les cintes tenen 0 elements guais
+    !demanar mes palets. TODO: demanar palets
+  ENDIF
+ ENDFOR
+  Incr Unload;
+  !Maquina omplerta
+  ShowMe "</GetMateria>"
+ENDPROC
 
 PROC CmpMachine(byte PvtCinta, num PvtIndex1)
 
@@ -335,13 +398,16 @@ ENDPROC
 
 
 PROC GetPaletsToMachine(byte PvtCinta3, byte PvtIndex)
-    PvtCinta3:=1;
-    !num tipus,robtarget pallet
-    !Flipa amb la recursivitat chavaless
+  !Func que donada el num de cinta i el numero de item a treure, el treu i es crida a ella mateixa al acabar fins que el palet esta buit
+  !Flipa amb la recursivitat chavaless
+    ShowMe "<GetPaletsToMachine>";
+    ShowMe PvtCinta3;
+    
     
     BackToZero(1);
     BackToZero(2);
     !Reset if needed
+    !TODO: revisar
     TEST PvtCinta3 
     CASE 1:
         GoToPoint Ppalet1, PosMosaic{1, PvtIndex, Mosaic{PvtCinta3}}, PosMosaic{2, PvtIndex, Mosaic{PvtCinta3}}, PosMosaic{3, PvtIndex, Mosaic{PvtCinta3}};
@@ -352,8 +418,9 @@ PROC GetPaletsToMachine(byte PvtCinta3, byte PvtIndex)
 
     CmpMachine PvtCinta3, PvtIndex;
     PvtAux2:= CmpMachineOut;
+    !Mira quin item esperar
 
-    IF materia{PvtAux2} = CountMateriaM{PvtAux2} THEN  
+    IF CountMateriaM{PvtAux2} >= materia{PvtAux2} THEN  
         PvtAux2:=4; !Discard
     ENDIF
     
@@ -374,7 +441,7 @@ PROC GetPaletsToMachine(byte PvtCinta3, byte PvtIndex)
     TPUI;
 
 
-
+    !mira si cal recursivitat o el palet esta buit
     IF PvtIndex < SizeMosaic{Mosaic{PvtCinta3}} THEN
         Incr PvtIndex;
         GetPaletsToMachine PvtCinta3, PvtIndex;
@@ -388,8 +455,6 @@ PROC GetPaletsToMachine(byte PvtCinta3, byte PvtIndex)
         SetDO EnCinta2, 1;
         RequestPalet{2}:=TRUE;
     ENDIF
-!Anar a home mentres espera -> WaitReq
-
 ENDPROC
 
 PROC BackToZero(byte PaletNum) 
@@ -402,7 +467,7 @@ PROC BackToZero(byte PaletNum)
   ENDIF
 ENDPROC
 
-PROC WaitReq()
+PROC WaitReq() !TODO: revisar aixo
 !Func que va a home si s ha d esperar a que vinguin palets
   IF DetectCinta1=FALSE AND DetectCinta2=FALSE  AND RequestPalet{1} AND RequestPalet{2} THEN
     GoToHome;
@@ -465,6 +530,7 @@ ENDPROC
 !Traps !TODO:SOLVE ARRAY
   TRAP Trp_Cinta1 !neets update
     DetectCinta1:=TRUE;
+    FlagPaletWithStock{1}:=TRUE;
     SetDO EnCinta1, 0;
     RequestPalet{1}:=FALSE;
     EnterTypeOfMosaic 1;
@@ -472,6 +538,7 @@ ENDPROC
 
   TRAP Trp_Cinta2
     DetectCinta2:=TRUE;
+    FlagPaletWithStock{2}:=TRUE;
     SetDO EnCinta2, 0;
     RequestPalet{2}:=FALSE;
     EnterTypeOfMosaic 2;
