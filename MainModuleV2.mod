@@ -223,70 +223,7 @@ PROC CmpPty()
   ShowMe "</CmpPty>";
 ENDPROC
 
-PROC GetMateriaV0()!NOT THIS ONE
-    !Here is where the magic happens btch winkwink 
-  VAR byte Index:=1;
-  VAR byte HighestPriority;
-  ShowMe "<GetMateria>";
 
-    !No se si aixo esta be
-  IF FlagPaletWithStock{1} AND FlagPaletWithStock{2} AND FlagNoStock = FALSE THEN !no funciona el NOT
-    HighestPriority:= ComputePriority{1};
-  ELSEIF FlagPaletWithStock{1} THEN !NoloseRick, compute priority es la maquina amb maxima prioritat i despres pasa a cinta amb mes prioritat, solve thiss
-    HighestPriority:= 1;
-    !request 2
-  ELSEIF FlagPaletWithStock{2} THEN
-    HighestPriority:= 2;
-    !request1
-  ELSE
-    HighestPriority:=1; !TODO: RLY needed??
-    WaitReq;
-
-    !Other option:
-    err;
-  ENDIF
-  ShowMe "GetMateria>HigestPriority=";
-  ShowMe ByteToStr(HighestPriority);
-  WaitTime 0.5;
-
-  !This is to find the cinta w more intresting parts (CASE BOTH 0 HANDELED BY THE FACT THAT THEY ARE EQUAL TO ZEROW madafaka)
-  FOR j FROM 1 TO 2 DO !AQUI TENIM BYTE (NO POT SER BYTE; CAL ITERAR)
-    TEST Mosaic{j}
-    CASE 0:
-        ShowMe "Cinta not available :(";
-    CASE 1:
-      FOR k FROM 1 TO SizeMosaic{1} DO
-        IF HighestPriority = Mosaic1{k} THEN
-          Incr auxiliar{j+1};
-        ENDIF
-      ENDFOR
-    CASE 2:
-      FOR k FROM 1 TO 4 DO
-        IF HighestPriority = Mosaic2{k} THEN
-            Incr auxiliar{j+1};
-        ENDIF
-      ENDFOR
-      !MIRAR BE AIXO
-    ENDTEST
-    !/CalcAlgorism
-
-
-  IF auxiliar{2} > auxiliar{3} THEN
-    GetPaletsToMachine HighestPriority, 1;
-    WaitReq;
-  ELSE 
-    GetPaletsToMachine HighestPriority, 1;
-    WaitReq; !TODO: finish this (func que espera mentres no hi han palets)
-  
-  ENDIF
- ENDFOR
-  
-    !tot entrat i prioritat calculada
-  
-  !aqui sabrem que ha d agafar i per a quina maquina
-
-  ShowMe "</GetMateria>";
-ENDPROC
 
 PROC GetMateriaMk1() !NEW VERSION OF GETMATERIA
     !Here is where the magic happens btch winkwink 
@@ -339,16 +276,18 @@ PROC GetMateriaMk1() !NEW VERSION OF GETMATERIA
     !/CalcAlgorism-> se ha guardado en auxiliar{2i3} la suma de los items mas prioritarios para decidir que cinta pillar
 
 
-  IF auxiliar{2} > auxiliar{3} THEN
+  IF auxiliar{2} > auxiliar{3} AND Mosaic{1} <> 0 THEN
     GetPaletsToMachine 1, 1; !cinta1
     WaitReq;
-  ELSEIF auxiliar{2} < auxiliar{3} THEN
+  ELSEIF auxiliar{2} < auxiliar{3} AND Mosaic{2} <> 0 THEN
     GetPaletsToMachine 2, 1; !cinta 2
     WaitReq; !TODO: finish this (func que espera mentres no hi han palets)
   ELSE
     !Les cintes tenen 0 elements guais
     !demanar mes palets. TODO: demanar palets
   ENDIF
+  auxiliar{2}:=0;
+  auxiliar{3}:=0;
  ENDFOR
   Incr CountPaletCmplt;
   !Maquina omplerta
@@ -358,7 +297,7 @@ ENDPROC
 PROC CmpMachine(byte PvtCinta, num PvtIndex1)
 
 !func que retorna el tipus de materia per trobar la estaico, chorras, FALTA ACABAr
-  PvtCinta:=1;
+  
   TEST Mosaic{PvtCinta}
   CASE 1:
     PvtAux1:=Mosaic1{PvtIndex1};
@@ -502,7 +441,7 @@ PROC TPUI()
 !TPUI teach pendant User Interface PAT PENDING (R) TM
 
   TPErase;
-  TPWrite " -----------------STATION 1: "\Num:=State{1};
+  TPWrite " --------------------------------------";
   TPWrite " Suma peces total estacio 1: "\Num:=materia{1};
   TPWrite " Peces entrades: "\Num:=CountMateriaM{1};
   TPWrite " Falten per entrar: "\Num:=materia{1}-CountMateriaM{1};
