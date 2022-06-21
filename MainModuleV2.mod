@@ -3,7 +3,7 @@ MODULE MainModule
     !   CODI FASE 3 jdrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
     !
     !
-    ! date
+    ! date Today jeje
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     !0) definicio i ini Vars
@@ -23,12 +23,9 @@ MODULE MainModule
  
     CONST num Zoffset := 100; !PUNT SEGURETAT VERTICAL
     !Vars per contar els offsets i les distancies
-    VAR num LastPaletPos{2,3}:=[[0,0,2], [0,0,2]]; !NOTE: z=2 ja que hi han 2 nivells per treure i comenca des de dalt, quan z=0, ja s'han tret els 2 pisos de coses
-    !array per guardar on es queda a despaletitzar {Last position as NPalet, XYZ}
-    VAR bool RstLastPaletPos{2}:=[FALSE, FALSE];
-    !array boleana per guardar l'estat del reset de la memoria de despaletitzar
+   
     !--------------------  DATA  --------------------
-    CONST byte SizeItem{3,3}:=[[10,40,20], [10,30,20], [20,20,20]];
+
     !Array dimensions materies, index 1->A, 3->C
     VAR byte Mosaic1{12}:=[3, 3, 1, 1, 3, 3, 1, 1, 3, 3, 1, 1]; !C, C, A, A, C, C, A, A, C, C, A, A
     VAR byte Mosaic2{12}:=[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]; !C, C, C, C, C, C, C, C, C, C, C, C
@@ -49,16 +46,10 @@ MODULE MainModule
 
     VAR num CountMateriaM{3}:=[0,0,0];
     VAR num CountMateriaP{2}:=[0,0];
-    !array contar materies entrades a maquina i palet 
+    !array contar materies entrades a maquina i a palet
 
     VAR num auxiliar{3}:=[0,0,0];
     !array aux
-
-    VAR bool FlagNoStock:=False;
-    !Bool per buscar un altre palet per agafar peces
-
-    VAR bool FlagPaletWithStock{2}:=[FALSE, FALSE];
-    !array bool per guardar si hi han peces al palet
 
     VAR intnum despaletitzar; 
     !var per guardar la info de despaletitzar
@@ -89,8 +80,6 @@ MODULE MainModule
     VAR bool OutputLogs:=FALSE;
     !VAR to enable output logs
     
-    VAR byte State{3}:=[1,2,3];
-    !var per guardar quina cinta esta activa
 
     VAR byte CountPaletCmplt:=0;
     !var per guardar quina iteracio de item a maquina es (valor ini=0 per determinar que encara no ha comencat)
@@ -124,16 +113,15 @@ PROC Main()
   
   
   WHILE Run DO
-    WHILE (DetectCinta1 OR DetectCinta2) DO !mentres hi hagi algun palet
-        GetMateriaMk1; !agafa la materia !TODO: mirar nom func
+    WHILE (DetectCinta1 OR DetectCinta2) AND Run DO !mentres hi hagi algun palet
+        GetMateriaMk2; !agafa la materia !TODO: mirar nom func
         TPUI;
     ENDWHILE
     !mirar quin falta i demanar palet
-    
+    GoToHome;
   ENDWHILE
+  
   TPErase;
-
-
 ENDPROC
 
 
@@ -199,6 +187,8 @@ ShowMe "<CheckNElements>";
     
 ENDPROC
 
+
+
 PROC CmpPty()
 ! Func que calcula la prioritat d una manera super pro
   ! aux 1->3
@@ -225,7 +215,7 @@ ENDPROC
 
 
 
-PROC GetMateriaMk1() !NEW VERSION OF GETMATERIA
+PROC GetMateriaMk2() !NEW VERSION OF GETMATERIA
     !Here is where the magic happens btch winkwink 
   VAR byte Index:=1;
   VAR byte HighestPriority;
@@ -241,6 +231,9 @@ PROC GetMateriaMk1() !NEW VERSION OF GETMATERIA
   ShowMe ByteToStr(HighestPriority);
   WaitTime 0.5;
 
+    IF Mosaic{1}=0 AND Mosaic{2}=0 THEN
+        Run:=FALSE;
+    ENDIF
   !This is to find the cinta w more intresting parts (CASE BOTH 0 HANDELED BY THE FACT THAT THEY ARE EQUAL TO ZEROW madafaka)
   FOR j FROM 1 TO 2 DO !AQUI TENIM BYTE (NO POT SER BYTE; CAL ITERAR)
     TEST Mosaic{j}
@@ -275,16 +268,18 @@ PROC GetMateriaMk1() !NEW VERSION OF GETMATERIA
     ENDTEST
     !/CalcAlgorism-> se ha guardado en auxiliar{2i3} la suma de los items mas prioritarios para decidir que cinta pillar
 
-
-  IF auxiliar{2} > auxiliar{3} AND Mosaic{1} <> 0 THEN
+!  AND materia{1}<>CountMateriaM{1} AND materia{2}<>CountMateriaM{2} AND materia{3}<>CountMateriaM{3} 
+  IF auxiliar{2} > auxiliar{3} AND Mosaic{1} <> 0THEN
     GetPaletsToMachine 1, 1; !cinta1
-    WaitReq;
+    !WaitReq;
   ELSEIF auxiliar{2} < auxiliar{3} AND Mosaic{2} <> 0 THEN
     GetPaletsToMachine 2, 1; !cinta 2
-    WaitReq; !TODO: finish this (func que espera mentres no hi han palets)
+    !WaitReq; !TODO: finish this (func que espera mentres no hi han palets)
   ELSE
     !Les cintes tenen 0 elements guais
     !demanar mes palets. TODO: demanar palets
+    !aqui check acabar?
+    RETURN;
   ENDIF
   auxiliar{2}:=0;
   auxiliar{3}:=0;
@@ -331,7 +326,7 @@ PROC EnterTypeOfMosaic(byte PvtAux3)
     EnterTypeOfMosaic PvtAux3;
   ENDIF
   WaitTime 1.5;
- 
+  CountMateriaP{PvtAux3}:=SizeMosaic{Mosaic{PvtAux3}};
 ENDPROC
 
 
@@ -340,19 +335,16 @@ PROC GetPaletsToMachine(byte PvtCinta3, byte PvtIndex)
   !Func que donada el num de cinta i el numero de item a treure, el treu i es crida a ella mateixa al acabar fins que el palet esta buit
   !Flipa amb la recursivitat chavaless
     ShowMe "<GetPaletsToMachine>";
-    
-    
-    
-    BackToZero(1);
-    BackToZero(2);
-    !Reset if needed
+   
     !TODO: revisar
     TEST PvtCinta3 
     CASE 1:
         !PosMosaic{(ABCD),(Iteracio),(XYZ)}
         GoToPoint Ppalet1, PosMosaic{Mosaic{PvtCinta3}, PvtIndex, 1}, PosMosaic{Mosaic{PvtCinta3}, PvtIndex, 2}, PosMosaic{Mosaic{PvtCinta3}, PvtIndex, 3};
+        Decr CountMateriaP{1};
     CASE 2: 
         GoToPoint Ppalet2, PosMosaic{Mosaic{PvtCinta3}, PvtIndex, 1}, PosMosaic{Mosaic{PvtCinta3}, PvtIndex, 2}, PosMosaic{Mosaic{PvtCinta3}, PvtIndex, 3};
+        Decr CountMateriaP{2};
     ENDTEST
     !va a la cinta que toqui a la pos que toqui
 
@@ -388,24 +380,18 @@ PROC GetPaletsToMachine(byte PvtCinta3, byte PvtIndex)
     ELSEIF PvtCinta3 = 1 THEN
         !demanar palet 1
         SetDO EnCinta1, 1;
+        Mosaic{1}:=0;
         
         RequestPalet{1}:=TRUE;
     ELSE
         !demanar palet 2
         SetDO EnCinta2, 1;
+        Mosaic{2}:=0;
         RequestPalet{2}:=TRUE;
     ENDIF
 ENDPROC
 
-PROC BackToZero(byte PaletNum) 
-! proc per resetejar les ultimes posicions amb el flag RST...
-  IF RstLastPaletPos{PaletNum}=TRUE THEN
-    LastPaletPos{PaletNum,1}:=0;
-    LastPaletPos{PaletNum,2}:=0;
-    LastPaletPos{PaletNum,3}:=2; !2 or zerow
-    RstLastPaletPos{PaletNum}:=FALSE;
-  ENDIF
-ENDPROC
+
 
 PROC WaitReq() !TODO: revisar aixo
 !Func que va a home si s ha d esperar a que vinguin palets
@@ -472,7 +458,6 @@ ENDPROC
 !Traps !TODO:SOLVE ARRAY
   TRAP Trp_Cinta1 !neets update
     DetectCinta1:=TRUE;
-    FlagPaletWithStock{1}:=TRUE;
     SetDO EnCinta1, 0;
     RequestPalet{1}:=FALSE;
     EnterTypeOfMosaic 1;
@@ -480,7 +465,7 @@ ENDPROC
 
   TRAP Trp_Cinta2
     DetectCinta2:=TRUE;
-    FlagPaletWithStock{2}:=TRUE;
+
     SetDO EnCinta2, 0;
     RequestPalet{2}:=FALSE;
     EnterTypeOfMosaic 2;
