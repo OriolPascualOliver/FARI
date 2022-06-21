@@ -16,7 +16,7 @@ MODULE MainModule
     CONST robtarget PUNTO1:=[[-10,-500,300],[0.0487016,-0.732289,-0.678123,0.0391261],[-2,-1,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
     CONST robtarget PUNTO2:=[[-50,500,60],[0.0545846,0.782406,-0.617839,0.0560026],[1,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
     CONST robtarget PUNTO3:=[[-500,100,125],[0.00252886,0.999052,-0.0406592,0.015331],[1,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
-    CONST robtarget PDiscard:=[[100,500,160],[0.02082,-0.311179,-0.95011,0.00495981],[0,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+    CONST robtarget PDiscard:=[[400,500,100],[0.02082,-0.311179,-0.95011,0.00495981],[0,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
     !Vars de posicio'
     CONST num offset_Ppalet{3} := [0,-10,-10];
     CONST num offset_PUNTO{3} := [-10, -10, -10];
@@ -86,13 +86,13 @@ MODULE MainModule
     VAR byte CmpMachineOut;
     !Var sortida de compute machine (no tira el return)
     
-    VAR bool OutputLogs:=TRUE;
+    VAR bool OutputLogs:=FALSE;
     !VAR to enable output logs
     
     VAR byte State{3}:=[1,2,3];
     !var per guardar quina cinta esta activa
 
-    VAR byte Unload:=1;
+    VAR byte CountPaletCmplt:=0;
     !var per guardar quina iteracio de item a maquina es (valor ini=0 per determinar que encara no ha comencat)
     
     !------------ VARS "Privades" ------------
@@ -125,7 +125,7 @@ PROC Main()
   
   WHILE Run DO
     WHILE (DetectCinta1 OR DetectCinta2) DO !mentres hi hagi algun palet
-        GetMateriaMk1; !agafa la materia
+        GetMateriaMk1; !agafa la materia !TODO: mirar nom func
         TPUI;
     ENDWHILE
     !mirar quin falta i demanar palet
@@ -221,7 +221,6 @@ PROC CmpPty()
       err;
   ENDTEST
   ShowMe "</CmpPty>";
-  ShowMe ComputePriority;
 ENDPROC
 
 PROC GetMateriaV0()!NOT THIS ONE
@@ -254,7 +253,7 @@ PROC GetMateriaV0()!NOT THIS ONE
   FOR j FROM 1 TO 2 DO !AQUI TENIM BYTE (NO POT SER BYTE; CAL ITERAR)
     TEST Mosaic{j}
     CASE 0:
-        ShowMe "Cinta not available :("
+        ShowMe "Cinta not available :(";
     CASE 1:
       FOR k FROM 1 TO SizeMosaic{1} DO
         IF HighestPriority = Mosaic1{k} THEN
@@ -267,6 +266,7 @@ PROC GetMateriaV0()!NOT THIS ONE
             Incr auxiliar{j+1};
         ENDIF
       ENDFOR
+      !MIRAR BE AIXO
     ENDTEST
     !/CalcAlgorism
 
@@ -285,20 +285,20 @@ PROC GetMateriaV0()!NOT THIS ONE
   
   !aqui sabrem que ha d agafar i per a quina maquina
 
-  ShowMe "</GetMateria>"
+  ShowMe "</GetMateria>";
 ENDPROC
 
 PROC GetMateriaMk1() !NEW VERSION OF GETMATERIA
     !Here is where the magic happens btch winkwink 
   VAR byte Index:=1;
   VAR byte HighestPriority;
-  !Unload guarda quina maquina ha omplert
+  !CountPaletCmplt guarda quina maquina ha omplert
   ShowMe "<GetMateriaMk1>";
-  IF Unload = 0 OR Unload > 3 THEN
-    Unload:=1;
+  IF CountPaletCmplt = 0 OR CountPaletCmplt > 3 THEN
+    CountPaletCmplt:=1;
     !First Time
   ENDIF
-  HighestPriority:= ComputePriority{Unload};
+  HighestPriority:= ComputePriority{CountPaletCmplt};
 
   ShowMe "GetMateria>HigestPriority=";
   ShowMe ByteToStr(HighestPriority);
@@ -342,7 +342,7 @@ PROC GetMateriaMk1() !NEW VERSION OF GETMATERIA
   IF auxiliar{2} > auxiliar{3} THEN
     GetPaletsToMachine 1, 1; !cinta1
     WaitReq;
-  ELSEIF auxiliar{2} < auxiliar{3}
+  ELSEIF auxiliar{2} < auxiliar{3} THEN
     GetPaletsToMachine 2, 1; !cinta 2
     WaitReq; !TODO: finish this (func que espera mentres no hi han palets)
   ELSE
@@ -350,9 +350,9 @@ PROC GetMateriaMk1() !NEW VERSION OF GETMATERIA
     !demanar mes palets. TODO: demanar palets
   ENDIF
  ENDFOR
-  Incr Unload;
+  Incr CountPaletCmplt;
   !Maquina omplerta
-  ShowMe "</GetMateria>"
+  ShowMe "</GetMateria>";
 ENDPROC
 
 PROC CmpMachine(byte PvtCinta, num PvtIndex1)
@@ -401,7 +401,7 @@ PROC GetPaletsToMachine(byte PvtCinta3, byte PvtIndex)
   !Func que donada el num de cinta i el numero de item a treure, el treu i es crida a ella mateixa al acabar fins que el palet esta buit
   !Flipa amb la recursivitat chavaless
     ShowMe "<GetPaletsToMachine>";
-    ShowMe PvtCinta3;
+    
     
     
     BackToZero(1);
@@ -410,9 +410,10 @@ PROC GetPaletsToMachine(byte PvtCinta3, byte PvtIndex)
     !TODO: revisar
     TEST PvtCinta3 
     CASE 1:
-        GoToPoint Ppalet1, PosMosaic{1, PvtIndex, Mosaic{PvtCinta3}}, PosMosaic{2, PvtIndex, Mosaic{PvtCinta3}}, PosMosaic{3, PvtIndex, Mosaic{PvtCinta3}};
+        !PosMosaic{(ABCD),(Iteracio),(XYZ)}
+        GoToPoint Ppalet1, PosMosaic{Mosaic{PvtCinta3}, PvtIndex, 1}, PosMosaic{Mosaic{PvtCinta3}, PvtIndex, 2}, PosMosaic{Mosaic{PvtCinta3}, PvtIndex, 3};
     CASE 2: 
-        GoToPoint Ppalet2, PosMosaic{1, PvtIndex, Mosaic{PvtCinta3}}, PosMosaic{2, PvtIndex, Mosaic{PvtCinta3}}, PosMosaic{3, PvtIndex, Mosaic{PvtCinta3}};
+        GoToPoint Ppalet2, PosMosaic{Mosaic{PvtCinta3}, PvtIndex, 1}, PosMosaic{Mosaic{PvtCinta3}, PvtIndex, 2}, PosMosaic{Mosaic{PvtCinta3}, PvtIndex, 3};
     ENDTEST
     !va a la cinta que toqui a la pos que toqui
 
@@ -492,6 +493,8 @@ PROC FillPosMosaic(string s) !TODO: fer macu si tinc temps, Rta: no.
                 [[10,10,2],[30,10,2],[10,30,2],[30,30,2],           [10,10,1],[30,10,1],[10,30,1],[30,30,1],          [10,10,0],[30,10,0],[10,30,0],[30,30,0],  [0,0,0],[0,0,0],[0,0,0]],
                 [[5,15,2],[15,15,2],[25,15,2],[35,15,2],[20,35,2],  [5,15,1],[15,15,1],[25,15,1],[35,15,1],[20,35,1], [5,15,0],[15,15,0],[25,15,0],[35,15,0],[20,35,0]],
                 [[5,15,2],[35,15,2],[25,35,2],[5,25,2],[20,20,2],   [5,15,1],[35,15,1],[25,35,1],[5,25,1],[20,20,1],  [5,15,0],[35,15,0],[25,35,0],[5,25,0],[20,20,0]]];
+    
+
     
 ENDPROC
 
