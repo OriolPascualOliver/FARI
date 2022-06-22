@@ -1,6 +1,6 @@
 MODULE MainModule
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !   CODI FASE 3 jdrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+    !   CODI FASE 3
     !
     !
     ! date Today jeje
@@ -25,7 +25,6 @@ MODULE MainModule
     !Vars per contar els offsets i les distancies
    
     !--------------------  DATA  --------------------
-
     !Array dimensions materies, index 1->A, 3->C
     VAR byte Mosaic1{12}:=[3, 3, 1, 1, 3, 3, 1, 1, 3, 3, 1, 1]; !C, C, A, A, C, C, A, A, C, C, A, A
     VAR byte Mosaic2{12}:=[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]; !C, C, C, C, C, C, C, C, C, C, C, C
@@ -35,7 +34,7 @@ MODULE MainModule
     VAR byte SizeMosaic{4}:=[12, 12, 15, 15];
     !array per guardar patrons de peces a mosaic CW+C, + numero items (s'hagues pogut posar en una super matriu al estilo matrix btw)3
 
-    VAR byte PosMosaic{4,15,3}; ![x,y,z], [pos], [mosaic] TODO: revisar index posmosaic!
+    VAR byte PosMosaic{4,15,3}; !{(ABCD),(Iteracio),(XYZ)} 
     ! a mega array for each position fuck yeah imagine that array (la controladora te 2gb de memoria i 1 de DRAM aixi que pot guardar 180 bytes)
 
     !--------------------  VARS  --------------------
@@ -99,7 +98,7 @@ PROC Main()
   EnterNElements;
   CheckNElements;
   CmpPty;
-  FillPosMosaic("CoolWay");
+  FillPosMosaic("JDR");
 
   CONNECT PwrCinta1 WITH Trp_Cinta1; !TODO: solve this
   ISignalDI Palet1,1,PwrCinta1;
@@ -116,6 +115,8 @@ PROC Main()
     WHILE (DetectCinta1 OR DetectCinta2) AND Run DO !mentres hi hagi algun palet
         GetMateriaMk2; !agafa la materia !TODO: mirar nom func
         TPUI;
+        Done;
+        !ask if done
     ENDWHILE
     !mirar quin falta i demanar palet
     GoToHome;
@@ -128,7 +129,7 @@ ENDPROC
 !2) Funcs aux
 
 PROC EnterNElements()
-!Func per entrer els elements per materia
+  !Func per entrer els elements per materia
   VAR num resposta;
   VAR bool TrucoEN:=FALSE;
   VAR num i:=1;
@@ -137,8 +138,8 @@ PROC EnterNElements()
       TPErase;
       TPWrite "MAQUINA "\Num:=i;
       TPReadNum resposta,"Enter element count: ";
-      IF resposta = 69420 THEN
-        !Srooy in advanced, function para probar como si fuera GTA
+      IF resposta = 69420 AND i = 1 THEN
+        !Sorry for the GOTO, this adds trucos like GTA sanandreas
         materia:=[1,2,3];
         priority:=[1,2,3];
         TPWrite "-------Truco UNLOCKED-------";
@@ -150,9 +151,7 @@ PROC EnterNElements()
         i:=i-1;
       ENDIF
       i:=i+1;
-  !ENDFOR
   ENDWHILE
-
 
   !entrar prioritats
   !FOR i FROM 1 TO 3 DO
@@ -173,10 +172,11 @@ PROC EnterNElements()
   TrucoGTA:
 ENDPROC
 
+
 PROC CheckNElements()
-!Func per validar les dades entrades
-ShowMe "<CheckNElements>";
-  auxiliar{1}:=(Priority{1} * priority{2} * priority{3}); !hem fet el producte per veure si tenen nums de prty diferents i els adequats, i m a genius tnku
+  !Func per validar les dades entrades
+  ShowMe "<CheckNElements>";
+  auxiliar{1}:=(Priority{1} * priority{2} * priority{3}); !hem fet el producte per veure si tenen nums de prty diferents i els adequats, i m a genius tnku 
   WHILE( auxiliar{1} <> 6) DO 
     TPWrite "ENTER A VALID PRIORITY INPUT YOU BASTARD :(";
     WaitTime 1.5;
@@ -184,13 +184,12 @@ ShowMe "<CheckNElements>";
     auxiliar{1}:=(Priority{1} * priority{2} * priority{3});
   ENDWHILE
   ShowMe "</CheckNElements>";
-    
+      
 ENDPROC
 
 
-
 PROC CmpPty()
-! Func que calcula la prioritat d una manera super pro
+  ! Func que calcula la prioritat d una manera super pro
   ! aux 1->3
   ShowMe "<CmpPty>";
   auxiliar{2}:=100*priority{1}+10*priority{2}+priority{3};
@@ -214,13 +213,23 @@ PROC CmpPty()
 ENDPROC
 
 
+PROC Done()
+  !test if the unloading prcoess is done
+  IF Mosaic{1}=0 AND Mosaic{2}=0 AND materia{1} = CountMateriaM{1} AND materia{2} = CountMateriaM{2} AND materia{3} = CountMateriaM{3} THEN
+    !ja ha acabat ask
+    Run:=FALSE;
+  ENDIF
+ENDPROC
 
-PROC GetMateriaMk2() !NEW VERSION OF GETMATERIA
-    !Here is where the magic happens btch winkwink 
+
+PROC GetMateriaMk2()
+  !Here is where the magic happens btch winkwink 
   VAR byte Index:=1;
   VAR byte HighestPriority;
-  !CountPaletCmplt guarda quina maquina ha omplert
   ShowMe "<GetMateriaMk1>";
+
+  !CountPaletCmplt guarda quina maquina ha omplert
+  
   IF CountPaletCmplt = 0 OR CountPaletCmplt > 3 THEN
     CountPaletCmplt:=1;
     !First Time
@@ -229,11 +238,9 @@ PROC GetMateriaMk2() !NEW VERSION OF GETMATERIA
 
   ShowMe "GetMateria>HigestPriority=";
   ShowMe ByteToStr(HighestPriority);
-  WaitTime 0.5;
 
-    IF Mosaic{1}=0 AND Mosaic{2}=0 THEN
-        Run:=FALSE;
-    ENDIF
+  Done;
+
   !This is to find the cinta w more intresting parts (CASE BOTH 0 HANDELED BY THE FACT THAT THEY ARE EQUAL TO ZEROW madafaka)
   FOR j FROM 1 TO 2 DO !AQUI TENIM BYTE (NO POT SER BYTE; CAL ITERAR)
     TEST Mosaic{j}
@@ -268,31 +275,27 @@ PROC GetMateriaMk2() !NEW VERSION OF GETMATERIA
     ENDTEST
     !/CalcAlgorism-> se ha guardado en auxiliar{2i3} la suma de los items mas prioritarios para decidir que cinta pillar
 
-!  AND materia{1}<>CountMateriaM{1} AND materia{2}<>CountMateriaM{2} AND materia{3}<>CountMateriaM{3} 
   IF auxiliar{2} > auxiliar{3} AND Mosaic{1} <> 0THEN
     GetPaletsToMachine 1, 1; !cinta1
     !WaitReq;
   ELSEIF auxiliar{2} < auxiliar{3} AND Mosaic{2} <> 0 THEN
     GetPaletsToMachine 2, 1; !cinta 2
-    !WaitReq; !TODO: finish this (func que espera mentres no hi han palets)
+
   ELSE
     !Les cintes tenen 0 elements guais
-    !demanar mes palets. TODO: demanar palets
     !aqui check acabar?
     RETURN;
   ENDIF
   auxiliar{2}:=0;
   auxiliar{3}:=0;
- ENDFOR
+  ENDFOR
   Incr CountPaletCmplt;
   !Maquina omplerta
   ShowMe "</GetMateria>";
 ENDPROC
 
 PROC CmpMachine(byte PvtCinta, num PvtIndex1)
-
-!func que retorna el tipus de materia per trobar la estaico, chorras, FALTA ACABAr
-  
+  !func que retorna el tipus de materia per trobar la estaico, chorras, FALTA ACABAr
   TEST Mosaic{PvtCinta}
   CASE 1:
     PvtAux1:=Mosaic1{PvtIndex1};
@@ -307,13 +310,8 @@ PROC CmpMachine(byte PvtCinta, num PvtIndex1)
 ENDPROC
 
 
-
-
-
-
-
 PROC EnterTypeOfMosaic(byte PvtAux3)
-!Func per entrer el tipus de mosaic
+  !Func per entrer el tipus de mosaic
   VAR num resposta;
   TPErase;
   TPWrite "Palet detectat a Cinta "\Num:=PvtAux3;
@@ -334,67 +332,66 @@ ENDPROC
 PROC GetPaletsToMachine(byte PvtCinta3, byte PvtIndex)
   !Func que donada el num de cinta i el numero de item a treure, el treu i es crida a ella mateixa al acabar fins que el palet esta buit
   !Flipa amb la recursivitat chavaless
-    ShowMe "<GetPaletsToMachine>";
-   
-    !TODO: revisar
-    TEST PvtCinta3 
-    CASE 1:
-        !PosMosaic{(ABCD),(Iteracio),(XYZ)}
-        GoToPoint Ppalet1, PosMosaic{Mosaic{PvtCinta3}, PvtIndex, 1}, PosMosaic{Mosaic{PvtCinta3}, PvtIndex, 2}, PosMosaic{Mosaic{PvtCinta3}, PvtIndex, 3};
-        Decr CountMateriaP{1};
-    CASE 2: 
-        GoToPoint Ppalet2, PosMosaic{Mosaic{PvtCinta3}, PvtIndex, 1}, PosMosaic{Mosaic{PvtCinta3}, PvtIndex, 2}, PosMosaic{Mosaic{PvtCinta3}, PvtIndex, 3};
-        Decr CountMateriaP{2};
-    ENDTEST
-    !va a la cinta que toqui a la pos que toqui
+  ShowMe "<GetPaletsToMachine>";
+  
+  !TODO: revisar
+  TEST PvtCinta3 
+  CASE 1:
+    !PosMosaic{(ABCD),(Iteracio),(XYZ)}
+    GoToPoint Ppalet1, PosMosaic{Mosaic{PvtCinta3}, PvtIndex, 1}, PosMosaic{Mosaic{PvtCinta3}, PvtIndex, 2}, PosMosaic{Mosaic{PvtCinta3}, PvtIndex, 3};
+    Decr CountMateriaP{1};
+  CASE 2: 
+    GoToPoint Ppalet2, PosMosaic{Mosaic{PvtCinta3}, PvtIndex, 1}, PosMosaic{Mosaic{PvtCinta3}, PvtIndex, 2}, PosMosaic{Mosaic{PvtCinta3}, PvtIndex, 3};
+    Decr CountMateriaP{2};
+  ENDTEST
+  !va a la cinta que toqui a la pos que toqui
 
-    CmpMachine PvtCinta3, PvtIndex;
-    PvtAux2:= CmpMachineOut;
-    !Mira quin item esperar
+  CmpMachine PvtCinta3, PvtIndex;
+  PvtAux2:= CmpMachineOut;
+  !Mira quin item esperar
 
-    IF CountMateriaM{PvtAux2} >= materia{PvtAux2} THEN  
-        PvtAux2:=4; !Discard
-    ENDIF
-    
-    TEST PvtAux2
-    CASE 1:
-        GoToP1;
-        Incr CountMateriaM{1};
-    CASE 2:
-        GoToP2;
-        Incr CountMateriaM{2};
-    CASE 3:
-        GoToP3;
-        Incr CountMateriaM{3};
-    DEFAULT:!discard if already full
-        GoToPoint PDiscard, 0, 0, 0;
-    ENDTEST
+  IF CountMateriaM{PvtAux2} >= materia{PvtAux2} THEN  
+    PvtAux2:=4; !Discard
+  ENDIF
+  
+  TEST PvtAux2
+  CASE 1:
+    GoToP1;
+    Incr CountMateriaM{1};
+  CASE 2:
+    GoToP2;
+    Incr CountMateriaM{2};
+  CASE 3:
+    GoToP3;
+    Incr CountMateriaM{3};
+  DEFAULT:!discard if already full
+    GoToPoint PDiscard, 0, 0, 0;
+  ENDTEST
 
-    TPUI;
+  TPUI;
 
 
-    !mira si cal recursivitat o el palet esta buit
-    IF PvtIndex < SizeMosaic{Mosaic{PvtCinta3}} THEN
-        Incr PvtIndex;
-        GetPaletsToMachine PvtCinta3, PvtIndex;
-    ELSEIF PvtCinta3 = 1 THEN
-        !demanar palet 1
-        SetDO EnCinta1, 1;
-        Mosaic{1}:=0;
-        
-        RequestPalet{1}:=TRUE;
-    ELSE
-        !demanar palet 2
-        SetDO EnCinta2, 1;
-        Mosaic{2}:=0;
-        RequestPalet{2}:=TRUE;
-    ENDIF
+  !mira si cal recursivitat o el palet esta buit
+  IF PvtIndex < SizeMosaic{Mosaic{PvtCinta3}} THEN
+    Incr PvtIndex;
+    GetPaletsToMachine PvtCinta3, PvtIndex;
+  ELSEIF PvtCinta3 = 1 THEN
+    !demanar palet 1
+    SetDO EnCinta1, 1;
+    Mosaic{1}:=0;
+    RequestPalet{1}:=TRUE;
+  ELSE
+    !demanar palet 2
+    SetDO EnCinta2, 1;
+    Mosaic{2}:=0;
+    RequestPalet{2}:=TRUE;
+  ENDIF
 ENDPROC
 
 
 
 PROC WaitReq() !TODO: revisar aixo
-!Func que va a home si s ha d esperar a que vinguin palets
+  !Func que va a home si s ha d esperar a que vinguin palets
   IF DetectCinta1=FALSE AND DetectCinta2=FALSE  AND RequestPalet{1} AND RequestPalet{2} THEN
     GoToHome;
     WHILE DetectCinta1 = FALSE AND DetectCinta2 = FALSE DO
@@ -408,23 +405,17 @@ ENDPROC
 
 
 
+PROC FillPosMosaic(string s)
+  !Func que omple la matriu de posicions
+  PosMosaic:=[[[10,10,2],[30,10,2],[20,25,2],[20,35,2],           [10,10,1],[30,10,1],[20,25,1],[20,35,1],          [10,10,0],[30,10,0],[20,25,0],[20,35,0],  [0,0,0],[0,0,0],[0,0,0]],
+              [[10,10,2],[30,10,2],[10,30,2],[30,30,2],           [10,10,1],[30,10,1],[10,30,1],[30,30,1],          [10,10,0],[30,10,0],[10,30,0],[30,30,0],  [0,0,0],[0,0,0],[0,0,0]],
+              [[5,15,2],[15,15,2],[25,15,2],[35,15,2],[20,35,2],  [5,15,1],[15,15,1],[25,15,1],[35,15,1],[20,35,1], [5,15,0],[15,15,0],[25,15,0],[35,15,0],[20,35,0]],
+              [[5,15,2],[35,15,2],[25,35,2],[5,25,2],[20,20,2],   [5,15,1],[35,15,1],[25,35,1],[5,25,1],[20,20,1],  [5,15,0],[35,15,0],[25,35,0],[5,25,0],[20,20,0]]];
 
-
-
-
-PROC FillPosMosaic(string s) !TODO: fer macu si tinc temps, Rta: no.
-!Func que omple la matriu de posicions
-    PosMosaic:=[[[10,10,2],[30,10,2],[20,25,2],[20,35,2],           [10,10,1],[30,10,1],[20,25,1],[20,35,1],          [10,10,0],[30,10,0],[20,25,0],[20,35,0],  [0,0,0],[0,0,0],[0,0,0]],
-                [[10,10,2],[30,10,2],[10,30,2],[30,30,2],           [10,10,1],[30,10,1],[10,30,1],[30,30,1],          [10,10,0],[30,10,0],[10,30,0],[30,30,0],  [0,0,0],[0,0,0],[0,0,0]],
-                [[5,15,2],[15,15,2],[25,15,2],[35,15,2],[20,35,2],  [5,15,1],[15,15,1],[25,15,1],[35,15,1],[20,35,1], [5,15,0],[15,15,0],[25,15,0],[35,15,0],[20,35,0]],
-                [[5,15,2],[35,15,2],[25,35,2],[5,25,2],[20,20,2],   [5,15,1],[35,15,1],[25,35,1],[5,25,1],[20,20,1],  [5,15,0],[35,15,0],[25,35,0],[5,25,0],[20,20,0]]];
-    
-
-    
 ENDPROC
 
 PROC TPUI()
-!TPUI teach pendant User Interface PAT PENDING (R) TM
+  !TPUI teach pendant User Interface PAT PENDING (R) TM
 
   TPErase;
   TPWrite " --------------------------------------";
@@ -442,7 +433,7 @@ PROC TPUI()
 ENDPROC
 
 PROC ShowMe(string msg)
-!FUNC per debugging
+  !FUNC per debugging
   IF OutputLogs THEN
   TPWrite msg;
   WaitTime 0.5;
@@ -450,12 +441,12 @@ PROC ShowMe(string msg)
 ENDPROC
 
 PROC err()
-!something went really wrong bro
+  !something went really wrong bro
   TPWrite "-- ERROR 418 I'm a teapot. Can t'make cofee :/ --";                  
   Stop;
 ENDPROC
 
-!Traps !TODO:SOLVE ARRAY
+!Traps
   TRAP Trp_Cinta1 !neets update
     DetectCinta1:=TRUE;
     SetDO EnCinta1, 0;
@@ -475,32 +466,32 @@ ENDPROC
 !{GoToPoint(punt, offset), GoToHome, GoToP1, GoToP2, GoToP3}
   PROC GoToPoint(robtarget PvtPTG, byte PvtOFST1, byte PvtOFST2, byte PvtOFST3) !found num, expected dim aixi que poso vars individuals i ja
     !INPUT: PointToGo
-      !func que va qualsevol pos del palet de manera guai
-      MoveJ Offs(PvtPTG, 10*offset_Ppalet{1}+PvtOFST1, 10*offset_Ppalet{2}+PvtOFST2, 10*offset_Ppalet{3}+Zoffset+PvtOFST3), v500, fine, tool0;
-      MoveL Offs(PvtPTG, 10*offset_Ppalet{1}+PvtOFST1, 10*offset_Ppalet{2}+PvtOFST2, 10*offset_Ppalet{3}+PvtOFST3), v100, fine, tool0;
-      MoveL Offs(PvtPTG, 10*offset_Ppalet{1}+PvtOFST1, 10*offset_Ppalet{2}+PvtOFST2, 10*offset_Ppalet{3}+Zoffset+PvtOFST3), v100, fine, tool0;
+    !func que va qualsevol pos del palet de manera guai
+    MoveJ Offs(PvtPTG, 10*offset_Ppalet{1}+PvtOFST1, 10*offset_Ppalet{2}+PvtOFST2, 10*offset_Ppalet{3}+Zoffset+PvtOFST3), v500, fine, tool0;
+    MoveL Offs(PvtPTG, 10*offset_Ppalet{1}+PvtOFST1, 10*offset_Ppalet{2}+PvtOFST2, 10*offset_Ppalet{3}+PvtOFST3), v100, fine, tool0;
+    MoveL Offs(PvtPTG, 10*offset_Ppalet{1}+PvtOFST1, 10*offset_Ppalet{2}+PvtOFST2, 10*offset_Ppalet{3}+Zoffset+PvtOFST3), v100, fine, tool0;
   ENDPROC
   
   PROC GoToHome()
-      MoveJ home,v500,fine,tool0;
+    MoveJ home,v500,fine,tool0;
   ENDPROC
   PROC GoToP1()
-      !func que va a maquina 1
-      MoveJ Offs(PUNTO1, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}+Zoffset), v500, fine, tool0;
-      MoveL Offs(PUNTO1, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}), v100, fine, tool0;
-      MoveL Offs(PUNTO1, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}+Zoffset), v100, fine, tool0;
+    !func que va a maquina 1
+    MoveJ Offs(PUNTO1, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}+Zoffset), v500, fine, tool0;
+    MoveL Offs(PUNTO1, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}), v100, fine, tool0;
+    MoveL Offs(PUNTO1, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}+Zoffset), v100, fine, tool0;
   ENDPROC
   PROC GoToP2()
-      !func que va a maquina 2
-      MoveJ Offs(PUNTO2, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}+Zoffset), v500, fine, tool0;
-      MoveL Offs(PUNTO2, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}), v100, fine, tool0;
-      MoveL Offs(PUNTO2, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}+Zoffset), v100, fine, tool0;
+    !func que va a maquina 2
+    MoveJ Offs(PUNTO2, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}+Zoffset), v500, fine, tool0;
+    MoveL Offs(PUNTO2, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}), v100, fine, tool0;
+    MoveL Offs(PUNTO2, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}+Zoffset), v100, fine, tool0;
   ENDPROC
   PROC GoToP3()
-      !func que va a maquina 3
-      MoveJ Offs(PUNTO3, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}+Zoffset), v500, fine, tool0;
-      MoveL Offs(PUNTO3, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}), v100, fine, tool0;
-      MoveL Offs(PUNTO3, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}+Zoffset), v100, fine, tool0;
+    !func que va a maquina 3
+    MoveJ Offs(PUNTO3, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}+Zoffset), v500, fine, tool0;
+    MoveL Offs(PUNTO3, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}), v100, fine, tool0;
+    MoveL Offs(PUNTO3, offset_PUNTO{1}, offset_PUNTO{2}, offset_PUNTO{3}+Zoffset), v100, fine, tool0;
   ENDPROC
 
 ENDMODULE
